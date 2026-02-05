@@ -329,6 +329,10 @@ When debugging an issue, work through these in order:
 | Discover fields | `find_columns` | Find what attributes exist |
 | See service relationships | `get_service_map` | Understand dependencies |
 
+**Always include a Honeycomb UI link** when presenting query results, traces, boards, or SLOs so the user can see the data themselves.
+
+**When presenting traces**, narrate the story using the actual metadata — who the user was, what they were doing, which services were involved, and what went wrong. Do not just list spans and durations. Use every available field (user IDs, account names, endpoints, request parameters, feature flags) to paint the full picture. Never hallucinate details not present in the data.
+
 ---
 
 ## Anti-Patterns to Avoid

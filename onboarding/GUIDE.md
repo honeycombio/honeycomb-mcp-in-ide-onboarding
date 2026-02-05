@@ -150,7 +150,7 @@ current_step: "<path>_step_1"
 
 ### Debugging Step 1: Find Something to Investigate
 
-**Action:** Run a query to find interesting traces.
+**Action:** Run a query to find interesting traces. **Include the Honeycomb link to the query results so the user can see the heatmap in the UI.**
 
 ```
 Call run_query with:
@@ -163,7 +163,9 @@ Call run_query with:
 
 > "This heatmap shows the distribution of request durations. Each row of pixels represents a time bucket. Darker colors mean more requests at that latency.
 >
-> See that band of requests around 200ms? That's your typical response time. But look at these scattered dots up at 2-3 seconds—those are your slow outliers. Let's investigate one."
+> See that band of requests around 200ms? That's your typical response time. But look at these scattered dots up at 2-3 seconds—those are your slow outliers. Let's investigate one.
+>
+> You can see this in the Honeycomb UI here: [link]"
 
 **Update progress.yaml:** Add `heatmaps` to `concepts_learned`.
 
@@ -173,19 +175,23 @@ Call run_query with:
 
 Help the user select a slow request from the heatmap results, then:
 
-**Action:** Call `get_trace` with the trace_id.
+**Action:** Call `get_trace` with the trace_id. **Include the Honeycomb link to the trace so the user can see the waterfall view in the UI.**
 
 **Explain (if "traces" not in concepts_learned):**
 
-> "This is a **trace**—a visualization of everything that happened to handle one request. Think of it like a receipt showing every step your code took.
->
-> The waterfall shows time flowing left to right. Each bar is called a **span**—one unit of work. Spans can be nested: a parent span (like 'handle HTTP request') contains child spans (like 'query database', 'call external API').
->
-> Key fields to notice:
-> - **duration_ms** — How long this span took
-> - **name** — What operation this represents
-> - **service.name** — Which service executed this code
-> - **status** — Whether it succeeded or errored"
+Tell the story of what happened in this trace using the actual data. **Do not just list spans.** Narrate it in plain language:
+
+1. **Start with context from the metadata.** Look at every field in the trace — user IDs, account names, plan tiers, endpoints, request parameters, feature flags, etc. Use whatever is there to describe who was doing what. For example: "This trace shows a request from user `acme-corp` on the Enterprise plan, hitting the `/api/v1/export` endpoint to download a CSV report."
+
+2. **Walk through what happened step by step.** Describe the journey through services in plain terms, not span jargon: "The request came into the API gateway, which routed it to the export service. The export service queried the database for the report data, then uploaded the result to S3."
+
+3. **Then introduce the vocabulary.** After telling the story, connect it to the concepts:
+
+> "What you're looking at is called a **trace** — it captures the full journey of a single request through your system. Each step in that journey (the API call, the database query, the S3 upload) is called a **span**. The waterfall view shows these spans as bars, with time flowing left to right. Longer bars = more time spent."
+
+4. **Point out what matters.** Highlight the bottleneck or interesting finding in context: "Notice that the database query took 1.8 seconds out of a total 2.1 seconds — that's where almost all the time went."
+
+**Never hallucinate details.** Only reference fields and values actually present in the trace. But use every piece of context available to make the trace relatable.
 
 **Update progress.yaml:** Add `traces`, `spans` to `concepts_learned`.
 
@@ -193,20 +199,22 @@ Help the user select a slow request from the heatmap results, then:
 
 ### Debugging Step 3: Find the Bottleneck
 
-Walk through the trace with the user:
+Walk through the trace with the user **using plain language, grounded in the actual data.** Continue the story from Step 2 — use the same user/customer context and describe what went wrong in terms the user can relate to.
 
-> "Let's read this trace together. The total request took 2.3 seconds. Scanning down...
->
-> - `api-gateway` spent 50ms routing
-> - `checkout-service` spent 100ms validating
-> - `payment-service` → `stripe-api` call took **2.1 seconds** ← There's our culprit
->
-> 91% of the time was spent waiting for the Stripe API. That's either a slow external dependency or a network issue."
+**Example** (adapt to real data — do not use this verbatim):
 
-**Tips to share:**
-- Look for the widest bars—they dominate total time
-- Fixed round durations (5s, 10s, 30s, 60s) often indicate timeouts
-- Error spans are usually marked with `status: error` or colored red
+> "So this Enterprise customer was trying to export their report, and the whole request took 2.3 seconds. Let's see where the time went:
+>
+> - The API gateway routed the request in 50ms — that's fine
+> - The checkout service spent 100ms validating — also fine
+> - But then the payment service called Stripe, and that took **2.1 seconds**
+>
+> That one call to Stripe ate 91% of the total time. So the slowness isn't in your code — it's the wait on an external API."
+
+**Tips to teach the user how to read traces on their own:**
+- The widest bars in the waterfall are where the time goes — start there
+- If you see spans landing at exactly 5s, 10s, 30s, or 60s, that's usually a timeout, not the real duration
+- Error spans are typically marked with `status: error` or highlighted in red
 
 ---
 
@@ -406,7 +414,7 @@ Walk through the investigation using the debugging techniques from Path A.
 >
 > From the SLO view → Click into failing events → Select a trace → See exactly what went wrong."
 
-**Action:** Demonstrate by fetching a trace from a failing request.
+**Action:** Demonstrate by fetching a trace from a failing request. **Include the Honeycomb link to the trace.** When explaining the trace, narrate the full story using the metadata — who the user was, what they were doing, and what went wrong — following the same approach as Debugging Step 2.
 
 ---
 
@@ -432,7 +440,9 @@ Update progress.yaml with concepts learned.
 Only explain these when the concept is NOT in `concepts_learned`:
 
 ### Traces and Spans
-> "A **trace** shows the complete journey of a single request through your system. Each step in that journey is a **span**. Spans have parent-child relationships—when service A calls service B, B's span is a child of A's span. The trace ID links them all together."
+> "A **trace** captures the full story of a single request — who made it, what they were trying to do, and every step your system took to handle it. Each step is called a **span** (an API call, a database query, a cache lookup). Spans nest inside each other: when one service calls another, the callee's span is a child of the caller's span."
+>
+> When explaining traces, always narrate the story using the actual metadata (user info, endpoints, request details) before introducing vocabulary. Never assume users can read a span waterfall without guidance.
 
 ### Heatmaps
 > "A **heatmap** shows distribution over time. The Y-axis is the value (like latency), X-axis is time, and color intensity shows count. It reveals patterns that line charts hide—like bimodal distributions or rare outliers."

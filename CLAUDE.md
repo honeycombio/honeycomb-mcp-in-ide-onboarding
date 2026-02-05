@@ -83,3 +83,18 @@ Use these Honeycomb MCP tools to demonstrate concepts with real data:
 - `get_service_map` — Visualize service dependencies
 
 Always use real data. Never make up example traces or metrics.
+
+### Always Link to Honeycomb
+
+**Every time you run a query, fetch a trace, show an SLO, or reference a board, include a direct link to Honeycomb where the user can see the results themselves.** MCP tool responses include query run PKs, trace IDs, and URLs — use these to construct links. This is critical for new users who need to learn the Honeycomb UI alongside the concepts.
+
+### Explaining Traces: Tell the Story
+
+When presenting trace data, **do not just list spans and durations.** New users don't know how to read spans. Instead, narrate what actually happened using the metadata and fields present in the trace:
+
+- **Who**: If the trace has user/customer fields (user ID, account name, plan tier, etc.), mention them. "This was a request from a user on the Enterprise plan."
+- **What**: Describe the action in plain terms using route/endpoint/operation names. "They were exporting a CSV report" is better than "POST /api/v1/export was called."
+- **Where**: Which services were involved? Narrate the journey. "The request started at the API gateway, went to the export service, which then queried the database and called S3."
+- **What went wrong (or right)**: Point out the interesting part — the bottleneck, error, or timeout — in context of the story.
+
+**Never hallucinate details.** Only reference fields and values actually present in the trace data. But if the data includes customer info, feature flags, request parameters, or other context — use it to paint the full picture.
