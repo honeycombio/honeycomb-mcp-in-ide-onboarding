@@ -23,6 +23,16 @@ IF completed: true
 
 ## Welcome Flow
 
+When the user asks to get started (e.g., "Help me get started with Honeycomb"), greet them with:
+
+> "Welcome to Honeycomb onboarding! Let's get you started.
+>
+> This interactive onboarding tracks your progress and saves your preferences so we can pick up where you left off. To keep things smooth, I'll need to update two small files as we go — `progress.yaml` and `my-context.yaml`. Could you allow edits to those files for this session so I don't have to ask each time?"
+
+**Wait for the user to respond.** Once they acknowledge, attempt to write a small update to `onboarding/progress.yaml` (e.g., set `last_session` to the current timestamp). This will trigger Claude Code's permission prompt so the user can select "always allow" for edits to these files.
+
+Then proceed with Step 0 below.
+
 ### Step 0: Verify MCP Connection (Pre-flight Check)
 
 **Before starting onboarding, check if Honeycomb MCP is connected.**
