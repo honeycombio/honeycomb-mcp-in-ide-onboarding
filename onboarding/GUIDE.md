@@ -48,11 +48,50 @@ mcp_connected: true
 
 ---
 
-### Step 1: Discover What's Instrumented
+### Step 1: Get to Know the User
+
+**Before exploring any data, learn about the user so the experience can be tailored to them.**
+
+If `my-context.yaml` has null values, ask the user about themselves:
+
+> "Before we dive in, I'd love to learn a bit about you so I can tailor this to your needs."
+
+Ask about their role:
+
+> "What's your role?
+> - Product engineer (building features)
+> - SRE / Platform (reliability & infrastructure)
+> - Data / Analytics
+> - Manager / Leadership
+> - Other"
+
+Ask about their observability experience:
+
+> "How familiar are you with observability tools?
+> - **New to it** — I haven't used tools like this before
+> - **Some experience** — I've used dashboards or logs, but I'm new to tracing
+> - **Experienced** — I'm comfortable with distributed tracing concepts"
+
+Optionally ask about their goals:
+
+> "Is there anything specific you're hoping to learn or do in Honeycomb?"
+
+Update `my-context.yaml` with their responses (role, experience_with_observability, learning_goals).
+
+**Update progress.yaml:**
+```yaml
+started: true
+current_step: "workspace_discovery"
+first_session: <current_timestamp>
+```
+
+---
+
+### Step 2: Discover What's Instrumented
 
 **Action:** Call `get_workspace_context` via the Honeycomb MCP.
 
-**Then explain to the user:**
+**Then explain to the user (calibrated to their experience level from Step 1):**
 
 > "Let me see what's flowing into your Honeycomb account..."
 
@@ -65,16 +104,16 @@ After the call returns, be concise and summarize:
 
 > "Your team has 3 environments set up. Production has data from 12 services including `api-gateway`, `checkout-service`, and `user-auth`."
 
+If the user mentioned primary services or learning goals in Step 1, connect what you find to their interests (e.g., "I can see your checkout service is instrumented — we can explore that together").
+
 **Update progress.yaml:**
 ```yaml
-started: true
 current_step: "path_selection"
-first_session: <current_timestamp>
 ```
 
 ---
 
-### Step 2: Choose a Learning Path
+### Step 3: Choose a Learning Path
 
 Ask the user what brings them here:
 
@@ -85,26 +124,14 @@ Ask the user what brings them here:
 
 Based on their answer, follow the corresponding path below.
 
+If the user shared learning goals in Step 1, you can suggest a path:
+> "Since you mentioned wanting to understand traces, the exploration path might be a great fit."
+
 **Update progress.yaml:**
 ```yaml
 path: "debugging" | "exploration" | "reliability"
 current_step: "<path>_step_1"
 ```
-
----
-
-### Step 3: Capture Context (if not in my-context.yaml)
-
-If `my-context.yaml` has null values, ask:
-
-> "Quick question—what's your role? This helps me calibrate explanations.
-> - Product engineer (building features)
-> - SRE / Platform (reliability & infrastructure)
-> - Data / Analytics
-> - Manager / Leadership
-> - Other"
-
-Update `my-context.yaml` with their response.
 
 ---
 
