@@ -3,15 +3,15 @@
 # You can leave fields as null and the AI will ask during onboarding.
 
 # Your role on the team
-# Options: product_engineer, sre, platform, data, manager, other
-role: null
+# Options: product_engineer, sre, platform, data, product_manager, customer_support, other
+role: product_engineer
 
 # Your experience with observability tools
 # Options: none, some, experienced
 # - none: New to observability, need concepts explained
 # - some: Used dashboards/logs before, but new to tracing
 # - experienced: Comfortable with distributed tracing concepts
-experience_with_observability: null
+experience_with_observability: none
 
 # Services you work on most (helps focus examples)
 # Example: [checkout, payments, user-auth]
@@ -31,8 +31,9 @@ explanation_level: detailed
 
 # Specific areas you want to learn about
 # Example: [debugging latency, setting up SLOs, understanding traces]
-learning_goals: []
+learning_goals: [debugging latency, understanding data, SLOs, general exploration]
 
 # Any context about your system architecture
 # Example: "Microservices on Kubernetes, using gRPC between services"
 system_notes: null
+# Session initialized: 2026-02-05

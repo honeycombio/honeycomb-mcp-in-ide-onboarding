@@ -72,7 +72,8 @@ Ask about their role:
 > - Product engineer (building features)
 > - SRE / Platform (reliability & infrastructure)
 > - Data / Analytics
-> - Manager / Leadership
+> - Product manager
+> - Customer support
 > - Other"
 
 Ask about their observability experience:
