@@ -1,0 +1,52 @@
+# Honeycomb Learning Progress
+# This file tracks your onboarding progress. The AI assistant updates it automatically.
+# You can also edit it manually if needed.
+
+# Is the Honeycomb MCP connected?
+mcp_connected: false
+
+# Is MCP setup pending (waiting for user to restart and authenticate)?
+mcp_setup_pending: false
+
+# Has the onboarding flow started?
+started: false
+
+# Current step in the onboarding flow
+# Possible values: null, "path_selection", "debugging_step_1", "exploration_step_1", etc.
+current_step: null
+
+# Has the user completed core onboarding?
+# Set to true once user understands: traces, spans, queries, and either SLOs or BubbleUp
+completed: false
+
+# Which learning path did the user choose?
+# Possible values: null, "debugging", "exploration", "reliability"
+path: null
+
+# Concepts the user has learned (AI won't re-explain these)
+# Add concepts as strings, e.g.: ["traces", "spans", "heatmaps"]
+concepts_learned: []
+
+# Timestamp of first onboarding session
+first_session: null
+
+# Timestamp of most recent session
+last_session: null
+
+# --- Optional: Manual overrides ---
+
+# If you're already experienced, set these to skip onboarding:
+# completed: true
+# concepts_learned:
+#   - traces
+#   - spans
+#   - heatmaps
+#   - queries
+#   - percentiles
+#   - slos
+#   - slis
+#   - error_budgets
+#   - burn_rate
+#   - bubbleup
+#   - baselines
+#   - data_model

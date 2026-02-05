@@ -1,0 +1,38 @@
+# My Honeycomb Context
+# Fill this in to help the AI assistant calibrate its responses.
+# You can leave fields as null and the AI will ask during onboarding.
+
+# Your role on the team
+# Options: product_engineer, sre, platform, data, manager, other
+role: null
+
+# Your experience with observability tools
+# Options: none, some, experienced
+# - none: New to observability, need concepts explained
+# - some: Used dashboards/logs before, but new to tracing
+# - experienced: Comfortable with distributed tracing concepts
+experience_with_observability: null
+
+# Services you work on most (helps focus examples)
+# Example: [checkout, payments, user-auth]
+primary_services: []
+
+# Your team name (for context in explanations)
+team_name: null
+
+# How detailed should explanations be?
+# Options: detailed, normal, minimal
+# - detailed: Full explanations with context (default for beginners)
+# - normal: Moderate explanations
+# - minimal: Just the facts, skip the background
+explanation_level: detailed
+
+# --- Optional: Additional context ---
+
+# Specific areas you want to learn about
+# Example: [debugging latency, setting up SLOs, understanding traces]
+learning_goals: []
+
+# Any context about your system architecture
+# Example: "Microservices on Kubernetes, using gRPC between services"
+system_notes: null
