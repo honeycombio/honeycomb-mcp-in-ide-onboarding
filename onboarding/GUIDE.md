@@ -27,11 +27,11 @@ When the user asks to get started (e.g., "Help me get started with Honeycomb"), 
 
 > "Welcome to Honeycomb onboarding! Let's get you started.
 >
-> This interactive onboarding tracks your progress and saves your preferences so we can pick up where you left off. To keep things smooth, I'll need to update two small files as we go — `progress.yaml` and `my-context.yaml`. Could you allow edits to those files for this session so I don't have to ask each time?"
+> I'll track your progress and preferences in two small files (`progress.yaml` and `my-context.yaml`) so we can pick up where we left off. Let me get those set up."
 
-**Wait for the user to respond.** Once they acknowledge, attempt to write a small update to `onboarding/progress.yaml` (e.g., set `last_session` to the current timestamp). This will trigger Claude Code's permission prompt so the user can select "always allow" for edits to these files.
+**Immediately after this message**, write an update to `onboarding/progress.yaml` (set `last_session` to the current timestamp) **and** `onboarding/my-context.yaml`. This triggers Claude Code's permission prompts. The user can select "always allow" for each file.
 
-Then proceed with Step 0 below.
+**Do not continue until both file permissions are granted.** Once they are, proceed to Step 0 below.
 
 ### Step 0: Verify MCP Connection (Pre-flight Check)
 
