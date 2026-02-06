@@ -411,7 +411,15 @@ The Query Builder is where you'll spend most of your time in Honeycomb. Every fi
 
 > "Your team has set up **SLOs** (Service Level Objectives) to define what 'good' looks like. Let's see what they're tracking..."
 
-Summarize the SLOs found. If none exist:
+Summarize the SLOs found and include a direct link:
+
+> "Here are the SLOs your team is tracking — you can see them all in the Honeycomb UI here: [link]"
+
+**Also check triggers:** Call `get_triggers` for the environment. If triggers exist, summarize them:
+
+> "Your team also has **triggers** set up — these are alerts that fire when a metric crosses a threshold. You can see them here: [link]"
+
+If no SLOs exist:
 
 > "No SLOs are configured yet. SLOs are a way to say 'we promise 99.9% of requests will succeed' and track that automatically. Want me to explain how they work?"
 
@@ -434,6 +442,8 @@ Update progress.yaml with concepts learned.
 
 **Action:** Call `get_slos` to fetch current SLOs. **Include the Honeycomb link to the SLOs page.**
 
+**Also check triggers:** Call `get_triggers` for the environment. Triggers are alerts tied to specific queries — they're often the first signal that something is wrong.
+
 **Explain (if "slos" not in concepts_learned):**
 
 > "An **SLO** (Service Level Objective) is a target for how reliable your service should be. For example: '99.9% of checkout requests should succeed within 500ms.'
@@ -443,7 +453,13 @@ Update progress.yaml with concepts learned.
 > - **Target** — The goal (99.9%, 99.5%, etc.)
 > - **Time window** — The period over which it's measured (30 days, rolling)
 >
-> When you're meeting your SLO, everything is fine. When you're not, it's time to investigate."
+> When you're meeting your SLO, everything is fine. When you're not, it's time to investigate.
+>
+> You can see your SLOs in the Honeycomb UI here: [link]"
+
+If triggers were found:
+
+> "Your team also has **triggers** — these fire alerts when a metric crosses a threshold (e.g., 'P95 latency > 500ms for 5 minutes'). You can see them here: [link]"
 
 **Try it yourself:** Find the SLOs page in the Honeycomb UI.
 
@@ -500,7 +516,9 @@ Walk through the investigation using the debugging techniques from Path A.
 
 > "When an SLO is at risk, you can drill down to individual traces to find root causes.
 >
-> From the SLO view → Click into failing events → Select a trace → See exactly what went wrong."
+> From the SLO view → Click into failing events → Select a trace → See exactly what went wrong.
+>
+> Here's the SLO in the Honeycomb UI: [link]"
 
 **Action:** Demonstrate by fetching a trace from a failing request. **Include the Honeycomb link to the trace.** When explaining the trace, narrate the full story using the metadata — who the user was, what they were doing, and what went wrong — following the same approach as Debugging Step 2.
 
