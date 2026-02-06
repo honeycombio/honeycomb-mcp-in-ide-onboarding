@@ -268,7 +268,7 @@ Walk through the trace with the user **using plain language, grounded in the act
 
 > "We found ONE slow trace. But is this a pattern? Let's use **BubbleUp** to find what slow requests have in common."
 
-**Action:** If you have a query with a heatmap, run `run_bubbleup` selecting the slow outliers.
+**Action:** If you have a query with a heatmap, run `run_bubbleup` selecting the slow outliers. **Include the Honeycomb link to the query so the user can see the BubbleUp results in the UI.**
 
 **Explain (if "bubbleup" not in concepts_learned):**
 
@@ -284,7 +284,7 @@ Walk through the trace with the user **using plain language, grounded in the act
 
 > "BubbleUp said 80% of slow requests have `user.plan = enterprise`. But is that meaningful? Let's check the **base rate** — what percentage of *all* requests are enterprise?"
 
-**Action:** Run a COUNT query grouped by the correlated field (e.g., `user.plan`) without filtering to the slow subset.
+**Action:** Run a COUNT query grouped by the correlated field (e.g., `user.plan`) without filtering to the slow subset. **Include the Honeycomb link to the query results.**
 
 > "If 75% of all traffic is enterprise, then 80% in the slow group is barely elevated — that's a lift of only 1.07x. But if only 20% of all traffic is enterprise, then 80% in the slow group is a 4x lift — that's a strong signal.
 >
@@ -362,7 +362,7 @@ If user has completed traces, spans, heatmaps, bubbleup, and queries → set `co
 
 ### Exploration Step 3: Run Your First Query
 
-**Action:** Run a simple aggregation query:
+**Action:** Run a simple aggregation query. **Include the Honeycomb link to the query results so the user can see them in the UI.**
 
 ```
 DATASET: matched_dataset from my-context.yaml (fall back to the primary environment's busiest dataset)
@@ -407,7 +407,7 @@ The Query Builder is where you'll spend most of your time in Honeycomb. Every fi
 
 ### Exploration Step 4: Discover SLOs
 
-**Action:** Call `get_slos` for the environment.
+**Action:** Call `get_slos` for the environment. **Include the Honeycomb link to the SLOs page so the user can explore them in the UI.**
 
 > "Your team has set up **SLOs** (Service Level Objectives) to define what 'good' looks like. Let's see what they're tracking..."
 
@@ -432,7 +432,7 @@ Update progress.yaml with concepts learned.
 
 ### Reliability Step 1: What Are SLOs?
 
-**Action:** Call `get_slos` to fetch current SLOs.
+**Action:** Call `get_slos` to fetch current SLOs. **Include the Honeycomb link to the SLOs page.**
 
 **Explain (if "slos" not in concepts_learned):**
 
@@ -483,7 +483,7 @@ If an SLO shows a declining budget line, click **View SLI** to jump to the under
 
 If any SLO is in a concerning state (triggered or burning fast):
 
-**Action:**
+**Action:** **Include Honeycomb links for every query and trace in this investigation.**
 1. Note which SLO is at risk
 2. Run a query filtered to failing events
 3. Use BubbleUp to find correlations
