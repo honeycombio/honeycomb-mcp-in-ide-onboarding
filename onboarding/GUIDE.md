@@ -27,9 +27,11 @@ When the user asks to get started (e.g., "Help me get started with Honeycomb"), 
 
 > "Welcome to Honeycomb onboarding! Let's get you started.
 >
-> I'll track your progress and preferences in two small files (`progress.yaml` and `my-context.yaml`) so we can pick up where we left off. Let me get those set up."
+> I'll track your progress and preferences in two small files (`progress.yaml` and `my-context.yaml`) so we can pick up where we left off. Let me get those set up.
+>
+> **Tip:** When the permission prompts appear, select **Always allow** for each file. I'll be updating these throughout onboarding to save your progress, and it'll be smoother if you don't have to approve every edit."
 
-**Immediately after this message**, write an update to `onboarding/progress.yaml` (set `last_session` to the current timestamp) **and** `onboarding/my-context.yaml`. This triggers Claude Code's permission prompts. The user can select "always allow" for each file.
+**Immediately after this message**, write an update to `onboarding/progress.yaml` (set `last_session` to the current timestamp) **and** `onboarding/my-context.yaml`. This triggers Claude Code's permission prompts. The user should select "Always allow" for each file to avoid repeated permission dialogs.
 
 **Do not continue until both file permissions are granted.** Once they are, proceed to Step 0 below.
 
