@@ -95,7 +95,8 @@ Follow the rules in `shared/analysis-rules.md` on every MCP query and analysis. 
 - **R5 BubbleUp Validation** — Always check base rates; report lift (selection rate / baseline rate)
 - **R6 Timeout Detection** — Flag clusters at round numbers (5s, 10s, 60s) as timeouts; note the likely config source
 - **R7 Rare Blockers** — For queue/concurrency issues, look for high duration + low count operations
-- **R8 Know When to Pivot** — After 3 fruitless rounds, tell the user the signal may not be in Honeycomb
+- **R8 No Averages on Small Samples** — Never AVG on low-volume groups (<~30 events); use percentiles or raw values
+- **R9 Know When to Pivot** — After 3 fruitless rounds, tell the user the signal may not be in Honeycomb
 
 ### Always Link to Honeycomb
 
