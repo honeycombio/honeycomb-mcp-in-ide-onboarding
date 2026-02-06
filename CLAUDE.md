@@ -84,9 +84,26 @@ Use these Honeycomb MCP tools to demonstrate concepts with real data:
 
 Always use real data. Never make up example traces or metrics.
 
+### Analysis Rules — Always Applied
+
+Follow the rules in `shared/analysis-rules.md` on every MCP query and analysis. Do not explain these rules unless asked. Just follow them.
+
+- **R1 Baselines** — Compare anomalies to previous hour, same day last week, same date last month, same day-of-week last month
+- **R2 Heatmap + Percentiles** — Every latency query includes HEATMAP and P50/P95/P99
+- **R3 Filter Before Grouping** — Check for multiple `name` values; filter to a single operation before GROUP BY
+- **R4 Critical Spans** — Check SLOs/triggers first to find the 1–2 critical spans; start investigations there
+- **R5 BubbleUp Validation** — Always check base rates; report lift (selection rate / baseline rate)
+- **R6 Timeout Detection** — Flag clusters at round numbers (5s, 10s, 60s) as timeouts; note the likely config source
+- **R7 Rare Blockers** — For queue/concurrency issues, look for high duration + low count operations
+- **R8 Know When to Pivot** — After 3 fruitless rounds, tell the user the signal may not be in Honeycomb
+
 ### Always Link to Honeycomb
 
 **Every time you run a query, fetch a trace, show an SLO, or reference a board, include a direct link to Honeycomb where the user can see the results themselves.** MCP tool responses include query run PKs, trace IDs, and URLs — use these to construct links. This is critical for new users who need to learn the Honeycomb UI alongside the concepts.
+
+### "Try It Yourself" UI Prompts
+
+During onboarding, after demonstrating a concept via MCP, offer the user a hands-on UI challenge. These are marked in `onboarding/GUIDE.md` as **"Try it yourself"** blocks. Present them as optional — if the user wants to skip, continue to the next step. If they try it and get stuck, help them navigate. These prompts only apply during onboarding (completed: false).
 
 ### Explaining Traces: Tell the Story
 

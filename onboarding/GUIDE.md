@@ -154,10 +154,12 @@ current_step: "<path>_step_1"
 
 ```
 Call run_query with:
-- A heatmap of duration_ms
+- HEATMAP(duration_ms) + P50(duration_ms) + P95(duration_ms) + P99(duration_ms)
 - Filtered to the last hour
 - Grouped by service.name or http.route
 ```
+
+> "We're querying both a heatmap and percentiles together. The heatmap shows the *shape* of the distribution — you can spot bimodal patterns, outlier clusters, and shifts over time. The percentiles give you concrete numbers to quote: 'P95 is 450ms' is something you can put in a Slack message. Always pair them."
 
 **Explain (if "heatmaps" not in concepts_learned):**
 
@@ -166,6 +168,19 @@ Call run_query with:
 > See that band of requests around 200ms? That's your typical response time. But look at these scattered dots up at 2-3 seconds—those are your slow outliers. Let's investigate one.
 >
 > You can see this in the Honeycomb UI here: [link]"
+
+**Try it yourself:** Open the Honeycomb link above. Now try building this query from scratch.
+
+1. Click **New Query** in the top nav
+2. In the dataset picker, select the same dataset we just queried
+3. Under **VISUALIZE**, click the `+` and select `HEATMAP(duration_ms)`. Add `P95(duration_ms)` too
+4. Under **WHERE**, add a filter for the time range (last 1 hour)
+5. Under **GROUP BY**, add `service.name` or `http.route`
+6. Click **Run Query**
+
+You should see the same heatmap we just looked at. Try hovering over the heatmap — the UI shows exact counts and values for each pixel bucket.
+
+**Pro tip:** In a real investigation, you wouldn't start with a broad heatmap like this. You'd check your SLOs and triggers first — they tell you which operations your team has already declared critical, and whether any are currently at risk. That narrows your search immediately. We started broad here to teach the concepts, but going forward, start from what matters most.
 
 **Update progress.yaml:** Add `heatmaps` to `concepts_learned`.
 
@@ -193,6 +208,15 @@ Tell the story of what happened in this trace using the actual data. **Do not ju
 
 **Never hallucinate details.** Only reference fields and values actually present in the trace. But use every piece of context available to make the trace relatable.
 
+**Try it yourself:** Open the trace link above and explore the waterfall view.
+
+1. Find the widest bar in the waterfall — that's the bottleneck we talked about
+2. Click on that span to expand its details panel on the right
+3. Look through the **attributes** listed — these are the fields we used to tell the story (user IDs, endpoints, status codes, etc.)
+4. Try clicking on a different span to compare its attributes
+
+Notice how each span shows its duration, service name, and operation. The indentation shows parent-child relationships — a span indented under another was called by it.
+
 **Update progress.yaml:** Add `traces`, `spans` to `concepts_learned`.
 
 ---
@@ -213,7 +237,7 @@ Walk through the trace with the user **using plain language, grounded in the act
 
 **Tips to teach the user how to read traces on their own:**
 - The widest bars in the waterfall are where the time goes — start there
-- If you see spans landing at exactly 5s, 10s, 30s, or 60s, that's usually a timeout, not the real duration
+- If you see spans landing at exactly 5s, 10s, 30s, or 60s, that's usually a **timeout**, not the real duration. These round numbers map to specific config values: 5s is a common HTTP client default, 10s is often a database timeout, 60s is a typical load balancer timeout. Spotting a timeout tells you *where* to look in code or config — and that the actual operation would have taken even longer
 - Error spans are typically marked with `status: error` or highlighted in red
 
 ---
@@ -233,6 +257,25 @@ Walk through the trace with the user **using plain language, grounded in the act
 > - 95% of slow requests hit `endpoint = /export` (vs 5% baseline)
 >
 > This surfaces correlations you'd never think to check manually."
+
+**After reviewing BubbleUp results, validate the top finding:**
+
+> "BubbleUp said 80% of slow requests have `user.plan = enterprise`. But is that meaningful? Let's check the **base rate** — what percentage of *all* requests are enterprise?"
+
+**Action:** Run a COUNT query grouped by the correlated field (e.g., `user.plan`) without filtering to the slow subset.
+
+> "If 75% of all traffic is enterprise, then 80% in the slow group is barely elevated — that's a lift of only 1.07x. But if only 20% of all traffic is enterprise, then 80% in the slow group is a 4x lift — that's a strong signal.
+>
+> **Lift = (rate in selection) / (rate in baseline).** A lift under 1.5x is weak. Always check before drawing conclusions."
+
+**Try it yourself:** Open the query link from Step 1 and try running BubbleUp in the UI.
+
+1. On the heatmap, click and drag to select a region of slow outliers (the scattered dots at the top)
+2. A **BubbleUp** panel will appear below the chart
+3. Scroll through the results — each row shows a field where the selection differs from the baseline
+4. Look for the **Baseline** vs **Selection** percentage bars. Fields where the bars look very different have high lift
+
+Compare what you see in the UI to what I showed you. The bar chart visualization makes it easier to spot strong signals at a glance than reading the numbers.
 
 **Update progress.yaml:** Add `bubbleup` to `concepts_learned`.
 
@@ -318,6 +361,17 @@ TIMERANGE: last 1 hour
 >
 > **P95 means:** 95% of requests were faster than this value. It's more useful than averages because averages hide outliers."
 
+**A note on GROUP BY hygiene:** We filtered to a single service above, but notice we're also grouping by `name` (the span/operation name). That's intentional — if you GROUP BY a field like `user.tier` without filtering to a specific operation first, you'd be mixing health checks (1ms) with exports (30s) in the same buckets, and the numbers would be meaningless. **Always filter to a specific span name before grouping by other fields.**
+
+**Try it yourself:** Open the query link above and try modifying it.
+
+1. In the query builder, change `P95(duration_ms)` to `P99(duration_ms)` — click on the calculation and edit it
+2. Add a new WHERE filter: click `+` under WHERE and filter to a specific `name` (operation)
+3. Click **Run Query** to see how the results change
+4. Try adding `HEATMAP(duration_ms)` to VISUALIZE alongside the percentile — now you get both the distribution shape and the numbers
+
+The Query Builder is where you'll spend most of your time in Honeycomb. Every field you see in the dropdowns comes from your instrumentation data.
+
 **Update progress.yaml:** Add `queries`, `percentiles` to `concepts_learned`.
 
 **Celebrate:**
@@ -365,6 +419,15 @@ Update progress.yaml with concepts learned.
 > - **Time window** — The period over which it's measured (30 days, rolling)
 >
 > When you're meeting your SLO, everything is fine. When you're not, it's time to investigate."
+
+**Try it yourself:** Find the SLOs page in the Honeycomb UI.
+
+1. In the left sidebar, click **SLOs**
+2. You'll see the list of SLOs we just reviewed — find one and click into it
+3. Look at the **Budget Burndown** graph — it shows how error budget is being consumed over time
+4. Check the **Burn Alerts** section at the bottom — these fire when the budget is burning too fast
+
+If an SLO shows a declining budget line, click **View SLI** to jump to the underlying query that defines what "good" means.
 
 **Update progress.yaml:** Add `slos`, `slis` to `concepts_learned`.
 
