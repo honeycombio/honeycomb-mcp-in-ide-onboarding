@@ -17,6 +17,14 @@ experience_with_observability: none
 # Example: [checkout, payments, user-auth]
 primary_services: []
 
+# Matched Honeycomb dataset for primary service (set automatically during onboarding)
+# Example: "checkout-service"
+matched_dataset: null
+
+# Matched Honeycomb environment (set automatically during onboarding)
+# Example: "production"
+matched_environment: null
+
 # Your team name (for context in explanations)
 team_name: null
 

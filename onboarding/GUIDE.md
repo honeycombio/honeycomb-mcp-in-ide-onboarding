@@ -76,6 +76,12 @@ Ask about their role:
 > - Customer support
 > - Other"
 
+Ask what they work on — this is the most important question because it determines which data we focus on first:
+
+> "What services or products do you work on? For example: checkout, payments, search, the iOS app — whatever you touch day to day."
+
+Save their answer to `primary_services` in `my-context.yaml`. This will be used in Step 2 to find matching datasets and in the first query to filter to their service.
+
 Ask about their observability experience:
 
 > "How familiar are you with observability tools?
@@ -87,7 +93,7 @@ Optionally ask about their goals:
 
 > "Is there anything specific you're hoping to learn or do in Honeycomb?"
 
-Update `my-context.yaml` with their responses (role, experience_with_observability, learning_goals).
+Update `my-context.yaml` with their responses (role, primary_services, experience_with_observability, learning_goals).
 
 **Update progress.yaml:**
 ```yaml
@@ -111,11 +117,22 @@ After the call returns, be concise and summarize:
 - Which datasets/services are sending data
 - Approximate data volume if visible
 
+**Match the user's services:** Check `primary_services` from `my-context.yaml` against the datasets and service names returned by `get_workspace_context`. If you find a match (exact or fuzzy — e.g., "checkout" matches `checkout-service`), call it out immediately:
+
+> "I found your checkout service — it's sending data to the `checkout-service` dataset in production. That's where we'll focus."
+
+If there are multiple matches, pick the one with the most recent data. If there are no matches, tell the user what's available and ask which one they'd like to explore.
+
+Update `my-context.yaml` with the matched dataset/environment so all subsequent queries use it:
+```yaml
+primary_services: [checkout]
+matched_dataset: "checkout-service"
+matched_environment: "production"
+```
+
 **Example response:**
 
-> "Your team has 3 environments set up. Production has data from 12 services including `api-gateway`, `checkout-service`, and `user-auth`."
-
-If the user mentioned primary services or learning goals in Step 1, connect what you find to their interests (e.g., "I can see your checkout service is instrumented — we can explore that together").
+> "Your team has 3 environments set up. Production has data from 12 services. I can see your checkout service is here as `checkout-service` — let's start there."
 
 **Update progress.yaml:**
 ```yaml
@@ -154,10 +171,13 @@ current_step: "<path>_step_1"
 
 ```
 Call run_query with:
+- Dataset: matched_dataset from my-context.yaml (fall back to the primary environment's busiest dataset)
 - HEATMAP(duration_ms) + P50(duration_ms) + P95(duration_ms) + P99(duration_ms)
 - Filtered to the last hour
-- Grouped by service.name or http.route
+- Grouped by name (operation) — this shows the user's own endpoints
 ```
+
+> "Let's look at what's happening in your [service name] right now..."
 
 > "We're querying both a heatmap and percentiles together. The heatmap shows the *shape* of the distribution — you can spot bimodal patterns, outlier clusters, and shifts over time. The percentiles give you concrete numbers to quote: 'P95 is 450ms' is something you can put in a Slack message. Always pair them."
 
@@ -343,11 +363,14 @@ If user has completed traces, spans, heatmaps, bubbleup, and queries → set `co
 **Action:** Run a simple aggregation query:
 
 ```
+DATASET: matched_dataset from my-context.yaml (fall back to the primary environment's busiest dataset)
 VISUALIZE: COUNT, P95(duration_ms)
-WHERE: service.name = <a real service>
+WHERE: service.name = <user's primary service from my-context.yaml>
 GROUP BY: name
 TIMERANGE: last 1 hour
 ```
+
+> "Let's query your [service name] and see what operations it handles..."
 
 **Explain (if "queries" not in concepts_learned):**
 
