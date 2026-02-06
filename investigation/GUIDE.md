@@ -25,6 +25,8 @@ This guide encodes expert debugging heuristics for investigating issues in Honey
 | Previous hour | Immediate comparison | Query with time offset |
 | Same time yesterday | Account for daily patterns | Compare 24h ago |
 | Same day last week | Account for weekly patterns | Compare 7d ago |
+| Same date last month | Catch monthly patterns | Compare ~30d ago |
+| Same day-of-week last month | Weekly pattern + calendar shift | Compare ~28d ago |
 | Pre-deploy baseline | After a deployment | Filter by version/commit |
 
 ### How to Compare
@@ -38,6 +40,11 @@ run_query: 25 hours ago to 24 hours ago
 
 # Look for: COUNT changes, P95 changes, error rate changes
 ```
+
+**Monthly patterns to watch for:**
+- Billing cycle runs (1st/15th of month)
+- Scheduled batch jobs or report generation
+- License renewal or quota reset spikes
 
 **Red flags:**
 - P95 doubled compared to yesterday
@@ -110,6 +117,12 @@ run_query:
 | `user.id` or `user.tier` | Find user-specific issues |
 | `region` or `availability_zone` | Identify infrastructure problems |
 | `version` or `deploy.id` | Compare across releases |
+
+### Watch for Conflicting Field Names Across Spans
+
+The same column name can mean different things in different span types. For example, `status` might be an HTTP status code on an API span but a job state (`queued`, `running`, `done`) on a worker span.
+
+**Before trusting a GROUP BY result**, confirm the field has consistent meaning across the spans in your query. If you're querying across span types, filter to a single `name` first (R3) or inspect sample events to verify the field semantics match.
 
 ---
 
@@ -212,17 +225,26 @@ run_query:
 
 ### Rare Long Tasks Blocking
 
-**Don't just look at high-volume operations.** A rare slow task can block many fast ones:
+**Don't just look at high-volume operations.** A rare slow task can block many fast ones. The intuition: when investigating queuing, the piled-up fast operations are *victims*, not the cause. Look for the blocker.
 
 ```
-# Find rare but slow operations
+# Find the blocker: sort by MAX duration, look for low COUNT + high duration
 run_query:
-  VISUALIZE: COUNT, P99(duration_ms), MAX(duration_ms)
+  VISUALIZE: COUNT, MAX(duration_ms), P99(duration_ms)
   GROUP BY: name
-  HAVING: MAX(duration_ms) > 30000  # Requests > 30s
+  ORDER BY: MAX(duration_ms) DESC
+  TIMERANGE: last 1 hour
 
-# A single 60s database migration can block 1000 fast queries
+# What to look for in results:
+# - name="db.migrate"  COUNT=3   MAX=62000ms  ← THIS is the blocker
+# - name="db.query"    COUNT=8400 MAX=61500ms  ← These are victims (queued behind migrate)
+# - name="db.insert"   COUNT=2100 MAX=60800ms  ← Also victims
+#
+# The victims have high MAX too (they waited), but their COUNT is high.
+# The blocker has low COUNT but high MAX — it's the rare operation holding the lock.
 ```
+
+**Key pattern:** Sort by `MAX(duration_ms)` DESC. The blocker is the row with **high duration + low count**. The victims have high duration + high count (many operations queued behind the blocker).
 
 ### Worker Pool Exhaustion
 
@@ -236,6 +258,46 @@ run_query:
 
 # Spikes in count that correlate with latency bands shifting up = likely queuing
 ```
+
+---
+
+## Critical Spans: Start from SLOs and Triggers
+
+Before exploring broadly, check what the team has already declared important.
+
+### Why Start Here
+
+SLOs and triggers encode institutional knowledge — the team has already decided which operations matter and what "good" looks like. Starting from these gives you:
+
+- A defined threshold for "bad" (the SLO target or trigger condition)
+- A narrowed scope (specific dataset, specific filter)
+- Context the team cares about (not just any anomaly — a relevant one)
+
+### How to Find Critical Spans
+
+```
+# 1. Check SLOs — these define the operations with reliability targets
+get_slos → note the SLI definitions (dataset, filter, success criteria)
+
+# 2. Check triggers — these define conditions the team wants alerts for
+get_triggers → note the query conditions and thresholds
+
+# 3. Start your investigation scoped to a critical span
+run_query:
+  VISUALIZE: HEATMAP(duration_ms), P50(duration_ms), P95(duration_ms), P99(duration_ms)
+  WHERE: <SLO/trigger filter conditions>
+  TIMERANGE: last 2 hours
+```
+
+### Example Workflow
+
+1. `get_slos` reveals a "checkout-latency" SLO targeting P99 < 500ms
+2. The SLO is burning budget — P99 is at 850ms
+3. Start with `run_query` filtered to checkout spans, not a broad dataset scan
+4. Use BubbleUp on the slow checkout requests specifically
+5. Drill into traces from the failing population
+
+This is faster and more focused than starting with "show me everything."
 
 ---
 

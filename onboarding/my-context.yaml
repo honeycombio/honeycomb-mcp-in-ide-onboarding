@@ -4,14 +4,14 @@
 
 # Your role on the team
 # Options: product_engineer, sre, platform, data, product_manager, customer_support, other
-role: product_engineer
+role: null
 
 # Your experience with observability tools
 # Options: none, some, experienced
 # - none: New to observability, need concepts explained
 # - some: Used dashboards/logs before, but new to tracing
 # - experienced: Comfortable with distributed tracing concepts
-experience_with_observability: none
+experience_with_observability: null
 
 # Services you work on most (helps focus examples)
 # Example: [checkout, payments, user-auth]
@@ -33,15 +33,14 @@ team_name: null
 # - detailed: Full explanations with context (default for beginners)
 # - normal: Moderate explanations
 # - minimal: Just the facts, skip the background
-explanation_level: detailed
+explanation_level: null
 
 # --- Optional: Additional context ---
 
 # Specific areas you want to learn about
 # Example: [debugging latency, setting up SLOs, understanding traces]
-learning_goals: [debugging latency, understanding data, SLOs, general exploration]
+learning_goals: []
 
 # Any context about your system architecture
 # Example: "Microservices on Kubernetes, using gRPC between services"
 system_notes: null
-# Session initialized: 2026-02-05

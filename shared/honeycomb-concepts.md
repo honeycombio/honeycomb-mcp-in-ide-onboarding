@@ -148,6 +148,9 @@ The subset of events being analyzed (e.g., slow requests, errors).
 ### Outlier
 An event or group of events that differs significantly from the norm.
 
+### Critical Spans
+The 1–2 operations per dataset that the team has declared most important, identified by their presence in SLO definitions or trigger conditions. Start investigations from critical spans — they have defined thresholds for "good" and represent what the team cares about most.
+
 ### Core Analysis Loop
 1. Observe anomaly in visualization
 2. Select anomalous data
