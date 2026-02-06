@@ -36,23 +36,8 @@ The easiest setup—upload the folder to a Project and the instructions persist 
 
 1. Create a new Project in Claude Desktop (or use an existing one)
 2. Upload all files from this folder to the Project's knowledge base
-3. Add the Honeycomb MCP: Settings → Developer → Edit Config, then add:
-
-```json
-{
-  "mcpServers": {
-    "honeycomb": {
-      "command": "npx",
-      "args": ["-y", "honeycomb-mcp"],
-      "env": {
-        "HONEYCOMB_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-4. Restart Claude Desktop
+3. Add the Honeycomb MCP — see the [Honeycomb MCP configuration guide](https://docs.honeycomb.io/integrations/mcp/configuration-guide/) for Claude Desktop setup
+4. Restart Claude Desktop and authenticate via the OAuth prompt
 5. Start a conversation in the Project and ask: "Help me get started with Honeycomb"
 
 Claude will automatically have access to all the guides and will follow the instructions in `CLAUDE.md`.
@@ -95,16 +80,13 @@ Point your AI at `onboarding/GUIDE.md` and ask it to follow the instructions.
 
 ## Honeycomb MCP Setup
 
-### Claude Code (Automated)
+See the [Honeycomb MCP configuration guide](https://docs.honeycomb.io/integrations/mcp/configuration-guide/) for full setup instructions across all supported tools.
+
+### Claude Code
 
 **Easiest setup—the onboarding guide will do this for you automatically!**
 
-When you start onboarding, Claude will:
-1. Detect if the Honeycomb MCP is missing
-2. Run `claude mcp add honeycomb --transport http https://mcp.honeycomb.io/mcp`
-3. Guide you to restart and authenticate via OAuth
-
-Just start with "Help me get started with Honeycomb" and follow the prompts.
+When you start onboarding, Claude will detect if the MCP is missing and set it up for you. Just start with "Help me get started with Honeycomb" and follow the prompts.
 
 **Manual setup (if preferred):**
 ```bash
@@ -113,32 +95,13 @@ claude mcp add honeycomb --transport http https://mcp.honeycomb.io/mcp
 # Run: /mcp to authenticate
 ```
 
+For EU region, use `https://mcp.eu1.honeycomb.io/mcp` instead.
+
 ### Other Tools
 
-Add the Honeycomb MCP to your tool's configuration file:
+See the [configuration guide](https://docs.honeycomb.io/integrations/mcp/configuration-guide/) for tool-specific instructions including Claude Desktop, VS Code, Amazon Q Developer, and more.
 
-| Tool | Config File Location |
-|------|---------------------|
-| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) |
-| ChatGPT Desktop | Settings → MCPs (GUI) |
-| Cursor | `.cursor/mcp.json` in project or check Cursor docs |
-
-**MCP server config to add:**
-```json
-{
-  "mcpServers": {
-    "honeycomb": {
-      "command": "npx",
-      "args": ["-y", "honeycomb-mcp"],
-      "env": {
-        "HONEYCOMB_API_KEY": "your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-Get your API key from [Honeycomb Settings → API Keys](https://ui.honeycomb.io/account/api_keys).
+Authentication happens via OAuth when you first connect — no API keys needed.
 
 ## What's Included
 
