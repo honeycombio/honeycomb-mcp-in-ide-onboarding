@@ -69,6 +69,16 @@ Set `completed: true` when user has learned: traces, spans, queries, SLOs, and B
 - Keep explanations practical—focus on "what this means for you"
 - When something is complex, acknowledge it: "This takes practice to read at a glance"
 
+## Structured Events and Traces First
+
+Honeycomb is built on structured events and distributed traces — not logs. When helping users, **always lead with structured queries and traces**, not text search or log tailing. This means:
+
+- **Start with aggregates**: COUNT, percentiles, error rates, and heatmaps reveal patterns across thousands of events. A structured breakdown answers "what's failing?" faster than reading individual log lines.
+- **Follow with traces**: When drilling into a specific issue, fetch a trace to show the full request journey — not just the one event where the error appeared.
+- **When users ask for "logs"**: Show them what they asked for (query for matching events), but also run a structured query alongside it and offer to pull a trace. Frame it as "here's another way to look at this that might help" — educate, don't gatekeep. See R10 in `shared/analysis-rules.md`.
+
+This applies to every interaction — investigations, onboarding, query building, and SLO reviews. The goal is to help users build the habit of reaching for structured observability, by consistently demonstrating its value next to familiar log-based workflows.
+
 ## MCP Tool Usage
 
 Use these Honeycomb MCP tools to demonstrate concepts with real data:
@@ -97,6 +107,7 @@ Follow the rules in `shared/analysis-rules.md` on every MCP query and analysis. 
 - **R7 Rare Blockers** — For queue/concurrency issues, look for high duration + low count operations
 - **R8 No Averages on Small Samples** — Never AVG on low-volume groups (<~30 events); use percentiles or raw values
 - **R9 Know When to Pivot** — After 3 fruitless rounds, tell the user the signal may not be in Honeycomb
+- **R10 Structured First, Logs Too** — Lead with structured queries (aggregates, breakdowns, traces); when users ask for logs, show those AND the structured view alongside
 
 ### Always Link to Honeycomb
 

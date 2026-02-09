@@ -44,3 +44,4 @@ learning_goals: []
 # Any context about your system architecture
 # Example: "Microservices on Kubernetes, using gRPC between services"
 system_notes: null
+# Updated during onboarding session

@@ -53,3 +53,15 @@ Never use AVG on a small sample of data. Averages are only meaningful with enoug
 ## R9: Know When to Pivot
 
 If three rounds of queries and BubbleUp produce no clear signal, tell the user directly. The problem may not be visible in Honeycomb — suggest checking: infrastructure metrics, external dependency status pages, client-side instrumentation, network/DNS, or uninstrumented code paths.
+
+## R10: Structured First, Logs Too
+
+Always start analysis with structured queries — aggregates (COUNT, P95, error rates), breakdowns (GROUP BY status code, endpoint, service), and heatmaps. These reveal patterns across thousands of events that no amount of log reading can surface.
+
+When a user asks for "logs" or wants to search for error messages, **do both**:
+
+1. **Show them what they asked for.** Run the query that surfaces matching events or samples. Respect their workflow — they may have good reasons for wanting to see raw output.
+2. **Also show the structured view.** Run a complementary query that answers the same question with aggregates, traces, or BubbleUp. Frame it as additive: "Here are the matching events. I also ran a breakdown by status code — it shows 92% of these errors are coming from one endpoint, which might help narrow this down."
+3. **Connect to traces when relevant.** If the events have trace IDs, offer to pull a representative trace: "Want me to grab the trace for one of these? It'll show the full request path that led to this error."
+
+The goal is to meet users where they are and expand their toolkit — not to block log-based workflows. Over time, users who see structured queries alongside their logs will naturally start reaching for the structured approach first.
