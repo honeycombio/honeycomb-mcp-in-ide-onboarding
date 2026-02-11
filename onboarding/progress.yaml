@@ -1,6 +1,8 @@
 # Honeycomb Learning Progress
-# This file tracks your onboarding progress. The AI assistant updates it automatically.
+# This file tracks your learning progress across all paths. The AI assistant updates it automatically.
 # You can also edit it manually if needed.
+
+# --- MCP Connection Status ---
 
 # Is the Honeycomb MCP connected?
 mcp_connected: false
@@ -8,35 +10,67 @@ mcp_connected: false
 # Is MCP setup pending (waiting for user to restart and authenticate)?
 mcp_setup_pending: false
 
-# Has the onboarding flow started?
+# --- Overall Learning Status ---
+
+# Has the user started learning? (Set to true when first path begins)
 started: false
 
-# Current step in the onboarding flow
-# Possible values: null, "path_selection", "debugging_step_1", "exploration_step_1", etc.
-current_step: null
-
-# Has the user completed core onboarding?
-# Set to true once user understands: traces, spans, queries, and either SLOs or BubbleUp
+# Has the user completed core learning?
+# Set to true once user has completed at least ONE path and learned core concepts:
+# - traces, spans, queries, and either (SLOs OR BubbleUp)
 completed: false
 
-# Which learning path did the user choose?
-# Possible values: null, "debugging", "exploration", "reliability"
-path: null
+# --- Learning Paths Progress ---
+
+# Track progress for each of the 3 learning paths
+# Users can complete multiple paths - they're independent
+paths:
+  debugging:
+    started: false      # Set true when user begins this path
+    completed: false    # Set true when user finishes a successful debugging session
+    last_step: null     # Track the last step within this path (optional)
+
+  exploring:
+    started: false
+    completed: false
+    last_step: null
+
+  reliability:
+    started: false
+    completed: false
+    last_step: null
+
+# --- Concepts Learned ---
 
 # Concepts the user has learned (AI won't re-explain these)
-# Add concepts as strings, e.g.: ["traces", "spans", "heatmaps"]
+# These are shared across all paths
+# Example: ["traces", "spans", "heatmaps", "queries", "bubbleup"]
 concepts_learned: []
 
-# Timestamp of first onboarding session
+# --- Session Timestamps ---
+
+# Timestamp of first learning session
 first_session: null
 
 # Timestamp of most recent session
 last_session: null
 
-# --- Optional: Manual overrides ---
+# --- Optional: Manual Overrides ---
 
-# If you're already experienced, set these to skip onboarding:
+# If you're already experienced with Honeycomb, you can skip learning:
+# 1. Set completed: true
+# 2. Set all paths you're comfortable with to completed: true
+# 3. Add all concepts to concepts_learned
+
+# Example for experienced users:
 # completed: true
+# paths:
+#   debugging:
+#     completed: true
+#   exploring:
+#     completed: true
+#   reliability:
+#     completed: true
 # concepts_learned:
 #   - traces
 #   - spans

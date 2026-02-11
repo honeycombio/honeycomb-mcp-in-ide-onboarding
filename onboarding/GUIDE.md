@@ -13,11 +13,15 @@ IF started: false
   → Begin WELCOME FLOW below
 
 IF started: true AND completed: false
-  → Resume from current_step value
+  → Check which paths have been started
+  → If paths.exploring.started: true → Resume exploration path
+  → Otherwise → Ask user what they want to do (Step 3: Choose a Learning Path)
 
 IF completed: true
   → Skip onboarding, be concise, follow investigation/GUIDE.md for debugging
 ```
+
+**Note:** The debugging and reliability paths are handled by `investigation/GUIDE.md` and `slo-basics/GUIDE.md` respectively. This guide primarily handles the **exploring** path and the initial welcome flow.
 
 ---
 
@@ -100,7 +104,6 @@ Update `my-context.yaml` with their responses (role, primary_services, experienc
 **Update progress.yaml:**
 ```yaml
 started: true
-current_step: "workspace_discovery"
 first_session: <current_timestamp>
 ```
 
@@ -136,10 +139,7 @@ matched_environment: "production"
 
 > "Your team has 3 environments set up. Production has data from 12 services. I can see your checkout service is here as `checkout-service` — let's start there."
 
-**Update progress.yaml:**
-```yaml
-current_step: "path_selection"
-```
+**No progress update needed here.** Proceed to Step 3.
 
 ---
 
@@ -152,20 +152,47 @@ Ask the user what brings them here:
 > 2. **Just exploring** — I want to understand what's here and how it works
 > 3. **Checking reliability** — I want to see how our services are performing"
 
-Based on their answer, follow the corresponding path below.
+Based on their answer, route to the appropriate path:
 
 If the user shared learning goals in Step 1, you can suggest a path:
 > "Since you mentioned wanting to understand traces, the exploration path might be a great fit."
 
-**Update progress.yaml:**
+**Update progress.yaml based on their choice:**
+
+- **If "I'm debugging something"** → Route to `investigation/GUIDE.md` and set:
 ```yaml
-path: "debugging" | "exploration" | "reliability"
-current_step: "<path>_step_1"
+paths:
+  debugging:
+    started: true
+```
+
+- **If "Just exploring"** → Continue with Path B below and set:
+```yaml
+paths:
+  exploring:
+    started: true
+```
+
+- **If "Checking reliability"** → Route to `slo-basics/GUIDE.md` and set:
+```yaml
+paths:
+  reliability:
+    started: true
 ```
 
 ---
 
 ## Path A: Debugging (Learn Traces)
+
+**NOTE:** This path is now handled by `investigation/GUIDE.md`. If the user chooses debugging, route them there and update `paths.debugging.started: true` in progress.yaml.
+
+The sections below are kept for reference but should be deprecated in favor of `investigation/GUIDE.md`.
+
+---
+
+## Path B: Exploration (Learn the Data Model)
+
+**This is the primary path handled by this guide.**
 
 ### Debugging Step 1: Find Something to Investigate
 
@@ -311,7 +338,9 @@ Compare what you see in the UI to what I showed you. The bar chart visualization
 
 **Update progress.yaml:**
 ```yaml
-current_step: "debugging_complete"
+paths:
+  debugging:
+    completed: true
 ```
 
 > "Want to try something else?
@@ -319,7 +348,7 @@ current_step: "debugging_complete"
 > - Look at another service's data
 > - Learn how to set up alerts for slow requests"
 
-If user has completed traces, spans, heatmaps, bubbleup, and queries → set `completed: true`.
+If user has completed traces, spans, heatmaps, bubbleup, and queries → also set `completed: true` at the top level.
 
 ---
 
@@ -579,9 +608,10 @@ After each teaching moment, update `progress.yaml`:
 
 ```yaml
 started: true
-current_step: "<current_step_name>"
-completed: false  # Set true when core concepts learned
-path: "debugging" | "exploration" | "reliability"
+paths:
+  exploring:  # or debugging, or reliability depending on which path
+    started: true
+    completed: false  # Set true when path is finished
 concepts_learned:
   - traces
   - spans

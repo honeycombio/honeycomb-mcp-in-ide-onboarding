@@ -13,7 +13,7 @@ You are helping a user learn and work with Honeycomb observability. Follow these
 2. **Check experience level** — Read `onboarding/progress.yaml`:
    - If `mcp_connected: false` → Set up MCP first (see `onboarding/setup-mcp.md`)
    - If `started: false` → Follow `onboarding/GUIDE.md` welcome flow
-   - If `started: true` and `completed: false` → Resume from `current_step`
+   - If `started: true` and `completed: false` → Detect intent and route to path (see "Path Selection Logic" below)
    - If `completed: true` → Be concise, skip explanations for known concepts
 
 3. **Check user preferences** — Read `onboarding/my-context.yaml` for:
@@ -21,6 +21,47 @@ You are helping a user learn and work with Honeycomb observability. Follow these
    - Preferred explanation level (detailed/normal/minimal)
 
 4. **Check concepts learned** — The `concepts_learned` list in progress.yaml tracks what the user already knows. **Never re-explain concepts they've learned.**
+
+## Path Selection Logic
+
+When `started: true` but `completed: false`, detect which learning path the user needs:
+
+### Detect User Intent
+
+Look for these signals in the user's prompt or context:
+
+**Debugging Path** (`investigation/GUIDE.md`):
+- Keywords: "debugging", "investigating", "broken", "slow", "error", "timeout", "issue", "problem", "regression"
+- Context: They describe a symptom or problem state
+- Examples: "checkout is timing out", "users are seeing errors", "latency spiked"
+
+**Exploring Path** (`onboarding/GUIDE.md` exploration sections):
+- Keywords: "exploring", "understand", "what data", "what's instrumented", "baseline", "learn", "familiarize"
+- Context: They want to build a mental model, no specific issue
+- Examples: "what data do we have?", "show me what's instrumented", "I'm new here"
+
+**Reliability Path** (`slo-basics/GUIDE.md`):
+- Keywords: "SLO", "reliability", "error budget", "burn rate", "alerts", "at risk"
+- Context: They want to understand service health and what "good" looks like
+- Examples: "check our SLOs", "is reliability at risk?", "what should we alert on?"
+
+### Route to the Appropriate Path
+
+1. **Check progress.yaml `paths` object** to see which paths have been started/completed
+2. **Detect intent** from the user's prompt (see above)
+3. **Route to the matching guide:**
+   - Debugging → `investigation/GUIDE.md`
+   - Exploring → `onboarding/GUIDE.md` (exploration path)
+   - Reliability → `slo-basics/GUIDE.md`
+4. **Update progress.yaml** to mark the path as started: `paths.debugging.started: true`
+5. **If unsure**, ask: "What would you like to do? (1) Debug an issue, (2) Explore data, (3) Check reliability"
+
+### Jumping Between Paths
+
+Users can work on multiple paths. If they've already completed one path and start a new one:
+- Mark the new path as started
+- Continue teaching concepts they haven't learned yet
+- Don't repeat concepts from `concepts_learned`
 
 ## Behavior by Experience Level
 
@@ -39,19 +80,21 @@ You are helping a user learn and work with Honeycomb observability. Follow these
 
 ## Guide Selection
 
-| User Intent | Guide to Follow |
-|-------------|-----------------|
-| Getting started, exploring | `onboarding/GUIDE.md` |
-| Debugging an issue, investigating | `investigation/GUIDE.md` |
-| Understanding SLOs/reliability | `slo-basics/GUIDE.md` |
-| Looking up a term | `shared/honeycomb-concepts.md` |
+| User Intent | Guide to Follow | Updates to progress.yaml |
+|-------------|-----------------|--------------------------|
+| Getting started (first time) | `onboarding/GUIDE.md` welcome flow | Set `started: true` |
+| Debugging an issue, investigating | `investigation/GUIDE.md` | Set `paths.debugging.started: true` |
+| Exploring data, building mental models | `onboarding/GUIDE.md` exploration sections | Set `paths.exploring.started: true` |
+| Understanding SLOs/reliability | `slo-basics/GUIDE.md` | Set `paths.reliability.started: true` |
+| Looking up a term | `shared/honeycomb-concepts.md` | No update needed |
 
 ## Progress Tracking
 
-After teaching a new concept, update `onboarding/progress.yaml`:
+### After Teaching Concepts
+
+Update `onboarding/progress.yaml` to add newly learned concepts:
 
 ```yaml
-# Add to concepts_learned:
 concepts_learned:
   - traces
   - spans
@@ -60,7 +103,26 @@ concepts_learned:
   # etc.
 ```
 
-Set `completed: true` when user has learned: traces, spans, queries, SLOs, and BubbleUp.
+**Never repeat concepts already in this list.**
+
+### After Completing a Path
+
+When a user completes a successful session in a learning path, mark it as complete:
+
+```yaml
+paths:
+  debugging:
+    started: true
+    completed: true  # User finished a full debugging investigation
+```
+
+### Marking Overall Completion
+
+Set `completed: true` when the user has:
+- Completed **at least ONE path** fully (debugging, exploring, OR reliability)
+- Learned these core concepts: traces, spans, queries, and (SLOs OR BubbleUp)
+
+Once `completed: true`, switch to concise mode—skip explanations unless explicitly asked.
 
 ## Tone Guidelines
 
