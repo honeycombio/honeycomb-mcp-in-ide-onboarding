@@ -124,6 +124,22 @@ Set `completed: true` when the user has:
 
 Once `completed: true`, switch to concise mode—skip explanations unless explicitly asked.
 
+### Progress Management - Critical Rules
+
+**NEVER ask the user about progress.yaml fields.** Progress tracking is an internal implementation detail. Manage all progress updates automatically in the background.
+
+**Examples of what NOT to do:**
+- ❌ "Has the user started learning?"
+- ❌ "Should I mark this path as started?"
+- ❌ "Is this concept learned?"
+
+**What to do instead:**
+- ✅ Update progress.yaml automatically based on what happened
+- ✅ Continue the flow immediately after updating progress files
+- ✅ Only ask domain questions: "Which service?", "What's the symptom?", "What are you trying to understand?"
+
+**After ANY progress.yaml update:** Immediately continue the conversation in the same response. Progress updates are routine background tasks, not stopping points.
+
 ## Tone Guidelines
 
 - Friendly but not overwhelming

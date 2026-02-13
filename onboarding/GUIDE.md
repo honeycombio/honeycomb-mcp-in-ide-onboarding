@@ -107,6 +107,8 @@ started: true
 first_session: <current_timestamp>
 ```
 
+**IMPORTANT:** After updating progress.yaml and my-context.yaml, immediately continue to Step 2 in the same response. Do not stop and wait for user input. Progress file updates are routine background tasks.
+
 ---
 
 ### Step 2: Discover What's Instrumented
