@@ -273,3 +273,5 @@ You'll know you've successfully learned a path when you can:
 ## Feedback
 
 Found something confusing? Want to add a skill? Open an issue or submit a PR.
+
+You can also share feedback directly from your AI assistant — type `/feedback` at any time and it will walk you through a short survey.

@@ -28,17 +28,14 @@ paths:
   debugging:
     started: false      # Set true when user begins this path
     completed: false    # Set true when user finishes a successful debugging session
-    last_step: null     # Track the last step within this path (optional)
 
   exploring:
     started: false
     completed: false
-    last_step: null
 
   reliability:
     started: false
     completed: false
-    last_step: null
 
 # --- Concepts Learned ---
 

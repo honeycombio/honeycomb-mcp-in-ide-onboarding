@@ -116,6 +116,12 @@ paths:
     completed: true  # User finished a full debugging investigation
 ```
 
+**After marking any path as complete, offer the feedback survey.** Do this naturally at the end of the wrap-up — not as an interruption. Example:
+
+> "Nice work finishing the debugging path! If you have 2–3 minutes, we'd love to hear how it went: [Share your feedback →](https://forms.gle/MyZDiMie7QNquoDV8)"
+
+Keep it brief. One sentence of context, then the link. Then continue the conversation normally (offer next steps, etc.).
+
 ### Marking Overall Completion
 
 Set `completed: true` when the user has:
