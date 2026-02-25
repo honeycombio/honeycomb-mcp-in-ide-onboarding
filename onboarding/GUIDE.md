@@ -35,7 +35,11 @@ When the user asks to get started (e.g., "Help me get started with Honeycomb"), 
 >
 > **Tip:** When the permission prompts appear, select **Always allow** for each file. I'll be updating these throughout onboarding to save your progress, and it'll be smoother if you don't have to approve every edit."
 
-**Immediately after this message**, write an update to `onboarding/progress.yaml` (set `last_session` to the current timestamp) **and** `onboarding/my-context.yaml`. This triggers Claude Code's permission prompts. The user should select "Always allow" for each file to avoid repeated permission dialogs.
+**Immediately after this message**, write an update to `onboarding/progress.yaml` (set `last_session` to the current timestamp) **and** `onboarding/my-context.yaml`. This triggers Claude Code's permission prompts.
+
+**In the same response where you make these edits**, include this reminder so it's visible right when the permission prompt appears:
+
+> "You should see a permission prompt for these files. Look for **'Always allow'** — it's easy to miss. Selecting it means you won't have to approve every progress save throughout onboarding."
 
 **Do not continue until both file permissions are granted.** Once they are, proceed to Step 0 below.
 
@@ -84,7 +88,23 @@ Ask about their role:
 
 Ask what they work on — this is the most important question because it determines which data we focus on first:
 
-> "What services or products do you work on? For example: checkout, payments, search, the iOS app — whatever you touch day to day."
+> "What services or products do you work on?"
+
+**If the user is unsure or doesn't know service names** (e.g., "I'm not sure", "what's available?", "I don't know"), call `get_workspace_context` immediately and present what you find:
+
+> "No problem — let me check what's sending data to Honeycomb right now..."
+
+After the call returns, list the datasets/services you find:
+
+> "Here's what I can see in your Honeycomb account:
+> - `checkout-service` (production)
+> - `payments-api` (production)
+> - `frontend` (production)
+> ...
+>
+> Do any of these sound like something you work on? Or pick whichever looks most familiar and we can explore it together."
+
+Use the actual names returned by `get_workspace_context`. Do not invent service names. If nothing obvious matches the user's role (e.g., a product manager unsure where to start), suggest the dataset with the most recent activity.
 
 Save their answer to `primary_services` in `my-context.yaml`. This will be used in Step 2 to find matching datasets and in the first query to filter to their service.
 
@@ -161,12 +181,21 @@ If the user shared learning goals in Step 1, you can suggest a path:
 
 **Update progress.yaml based on their choice:**
 
-- **If "I'm debugging something"** → Route to `investigation/GUIDE.md` and set:
+- **If "I'm debugging something"** → Route to `investigation/GUIDE.md`, set:
 ```yaml
 paths:
   debugging:
     started: true
 ```
+Then share these starter prompts with placeholders filled in from `my-context.yaml`:
+
+> "Here are a couple of prompts to kick things off — pick the one that fits best, or just describe the issue in your own words:
+>
+> **Something's broken:**
+> I'm debugging something. Service: `[matched_dataset]`. Symptom: [what users/devs see]. Time window: last 60 minutes. Ask me at most 2 questions, then start with structured queries and drill into traces. Include Honeycomb links.
+>
+> **It used to work (regression):**
+> I'm debugging a regression. Service: `[matched_dataset]`. Compare the last 60 minutes vs the previous 60 minutes (or same time yesterday). Identify what's changed, then pull 1–2 representative traces. Include Honeycomb links."
 
 - **If "Just exploring"** → Continue with Path B below and set:
 ```yaml
@@ -174,6 +203,18 @@ paths:
   exploring:
     started: true
 ```
+Then share these starter prompts:
+
+> "Here are some ways to start — pick whichever fits:
+>
+> **Overview of a service:**
+> I'm just exploring. Help me understand what data exists for `[matched_dataset]` in `[matched_environment]`. Show baseline error rate and latency (P50/P95/P99) for the last 24 hours. Include Honeycomb links. End with a short service cheat sheet.
+>
+> **Don't know the service name:**
+> I'm not sure what my service is called in Honeycomb. Start broad: run a high-level query and group by service and operation name fields to discover naming. Ask me at most 2 questions, then help me choose one service and build baselines.
+>
+> **What's instrumented?:**
+> Help me understand what's instrumented for `[matched_dataset]`. List the key operations/endpoints and the top fields I can break down by. Then suggest 3 useful starter queries I should save. Include Honeycomb links."
 
 - **If "Checking reliability"** → Route to `slo-basics/GUIDE.md` and set:
 ```yaml
@@ -181,6 +222,18 @@ paths:
   reliability:
     started: true
 ```
+Then share these starter prompts:
+
+> "Here are some ways to start:
+>
+> **Discover and check SLOs:**
+> Check our SLOs for `[matched_dataset]` in `[matched_environment]`. Tell me what SLOs exist (or confirm none). Explain what each one measures in plain English and show current status. Include Honeycomb links.
+>
+> **I'm worried right now:**
+> I'm worried about reliability right now. Identify any SLOs currently burning or at risk. If you find risk, tell me what signal is driving it and what I should alert on. Include Honeycomb links.
+>
+> **Check for coverage gaps:**
+> Audit SLO coverage for `[matched_dataset]`. If no SLO exists, recommend the best first SLO (what to measure, target, and window) based on available telemetry fields. Include Honeycomb links."
 
 ---
 
@@ -241,9 +294,13 @@ You should see the same heatmap we just looked at. Try hovering over the heatmap
 
 Help the user select a slow request from the heatmap results, then:
 
-**Action:** Call `get_trace` with the trace_id. **Include the Honeycomb link to the trace so the user can see the waterfall view in the UI.**
+**Action:** Call `get_trace` with the trace_id. **Include the Honeycomb link to the trace at the TOP of your response, before any narrative.** Frame it so the user knows what to expect before opening the UI:
 
-**Explain (if "traces" not in concepts_learned):**
+> "Here's the trace in Honeycomb: [link]
+>
+> When you open it, you'll see a **waterfall view** — each bar is one step your system took to handle this request. Below I'll walk through what happened so you know where to look."
+
+**Then explain (if "traces" not in concepts_learned):**
 
 Tell the story of what happened in this trace using the actual data. **Do not just list spans.** Narrate it in plain language:
 
@@ -436,6 +493,23 @@ The Query Builder is where you'll spend most of your time in Honeycomb. Every fi
 
 ---
 
+### Exploration Recovery: When Results Are Empty or Confusing
+
+When queries return no data, the service name doesn't match, or the user seems lost:
+
+1. **Confirm dataset and environment** — Re-check `my-context.yaml`. If there's any doubt, ask: "Is `[matched_dataset]` in `[matched_environment]` the right place to look?"
+2. **Widen the time window** — Try 24 hours, then 7 days. Baselines need stable traffic to be meaningful.
+3. **Run a bare COUNT** — No filters. Confirm events exist at all before adding complexity.
+4. **Discover naming via breakdown** — If service name is uncertain, run `GROUP BY service.name` or `GROUP BY name` to find what values actually exist.
+5. **List available fields** — Call `get_dataset_columns` to show what columns are present before filtering on assumed field names.
+6. **Diagnose the cause** — Tell the user whether this looks like: wrong dataset/environment, service name mismatch, low traffic, missing instrumentation, or a permissions issue.
+
+**If the user asks to reset**, share this prompt:
+
+> "My results are empty or confusing. Reset to a safe baseline: confirm dataset and environment, discover the right service name by grouping on service/operation fields, widen the time range to last 7 days, run a simple COUNT to confirm data exists, and list the best fields for filtering and grouping. Tell me whether this is an instrumentation, permissions, or naming issue. Include Honeycomb links for everything you run."
+
+---
+
 ### Exploration Step 4: Discover SLOs
 
 **Action:** Call `get_slos` for the environment. **Include the Honeycomb link to the SLOs page so the user can explore them in the UI.**
@@ -456,11 +530,39 @@ If no SLOs exist:
 
 ---
 
-### Exploration Step 5: Wrap Up
+### Exploration Step 5: Wrap Up — Service Cheat Sheet
 
-> "You now understand how Honeycomb organizes data. The next step is usually:
-> - Investigate a specific slow request (debugging path)
-> - Understand your SLOs and error budgets (reliability path)
+Before wrapping up, produce a **service cheat sheet** for the user. This is the concrete deliverable for the exploration path — something they can paste into a PR, incident doc, or team wiki.
+
+**Action:** Based on everything queried during this session, write out the cheat sheet using real values from the data:
+
+> "Here's your service cheat sheet for `[service name]` — save this somewhere handy:
+>
+> **Key operations/endpoints:**
+> - `[top operation 1]` — [description, e.g., "main checkout flow, ~Xk req/hr"]
+> - `[top operation 2]` — [description]
+> - `[top operation 3]` — [description]
+>
+> **Baseline (last 7 days):**
+> - Error rate: ~X%
+> - P50 latency: Xms | P95: Xms | P99: Xms
+>
+> **Best fields to break down by:**
+> - `[field 1]` — [why it's useful, e.g., "separates cache hits from misses"]
+> - `[field 2]` — [why it's useful]
+> - `[field 3]` — [why it's useful]
+>
+> **When something looks wrong, start here:** [link to the baseline query we just ran]
+>
+> **SLOs to watch:** [link to SLOs page, or "None configured yet"]"
+
+Only include fields and values actually observed in the session. Do not invent baselines.
+
+Then offer next steps:
+
+> "Want to go deeper?
+> - Debug a specific slow request (debugging path)
+> - Check your SLOs and error budgets (reliability path)
 > - Explore the service map to see how services connect"
 
 Update progress.yaml with concepts learned.
@@ -474,6 +576,22 @@ Update progress.yaml with concepts learned.
 **Action:** Call `get_slos` to fetch current SLOs. **Include the Honeycomb link to the SLOs page.**
 
 **Also check triggers:** Call `get_triggers` for the environment. Triggers are alerts tied to specific queries — they're often the first signal that something is wrong.
+
+**If no SLOs exist**, don't stop at "nothing configured." Run a proxy reliability baseline immediately so the user still leaves with useful data:
+
+1. Run `COUNT` + error rate (`http.status_code >= 500`) + `P50/P95/P99(duration_ms)` for the last 24 hours
+2. Run the same query for the last 7 days to establish a comparison baseline
+3. Present both:
+
+> "No SLOs are configured yet for this service — but here's what reliability looks like based on raw telemetry:
+>
+> - Error rate (last 24h): X% vs Y% over last 7 days
+> - P95 latency (last 24h): Xms vs Yms over last 7 days
+> - [Link to query]
+>
+> Based on this, I'd suggest alerting on [specific field/threshold]. A good first SLO would be: [concrete recommendation — e.g., '99% of POST /checkout requests succeed within 2s']."
+
+Then continue with the SLO explanation below so the user understands what SLOs are and why this matters.
 
 **Explain (if "slos" not in concepts_learned):**
 
@@ -551,22 +669,34 @@ Walk through the investigation using the debugging techniques from Path A.
 >
 > Here's the SLO in the Honeycomb UI: [link]"
 
-**Action:** Demonstrate by fetching a trace from a failing request. **Include the Honeycomb link to the trace.** When explaining the trace, narrate the full story using the metadata — who the user was, what they were doing, and what went wrong — following the same approach as Debugging Step 2.
+**Action:** Demonstrate by fetching a trace from a failing request. **Include the Honeycomb link at the TOP of your response, before any narrative**, with framing so the user knows what to expect in the UI. Then narrate the full story using the metadata — who the user was, what they were doing, and what went wrong — following the same approach as Debugging Step 2.
 
 ---
 
 ### Reliability Step 5: Wrap Up
 
-> "You now understand how SLOs work in Honeycomb:
-> - SLIs measure what matters
-> - SLOs set targets
-> - Error budgets quantify acceptable failure
-> - Burn rates show if you need to act
+Before wrapping up, deliver a **reliability snapshot** — a short summary the user can share with their team.
+
+**Action:** Based on what was found, produce:
+
+> "Here's the reliability snapshot for `[service name]`:
 >
-> Want to explore more?
+> **SLOs:**
+> - `[SLO name]`: [what it measures in plain English] — Status: [Normal/At risk/Triggered], [X]% budget remaining
+> - _(or: No SLOs configured yet)_
+>
+> **Current posture:** [1–2 sentence plain-English summary — e.g., "Checkout is healthy with 87% error budget remaining. Latency is within normal range." or "Payments SLO is burning at 3x — worth keeping an eye on."]
+>
+> **What to alert on:** [Specific recommendation — e.g., "Set a fast-burn alert at 14x over 1 hour for the checkout-success SLO"]
+>
+> **View in Honeycomb:** [link to SLO page or reliability board]"
+
+Then offer next steps:
+
+> "Want to go deeper?
+> - Investigate why a specific SLO is burning (debugging path)
 > - Set up a burn alert to get notified when budget is at risk
-> - Compare SLO performance across time periods
-> - Investigate why a specific SLO is burning"
+> - Compare SLO performance across time periods"
 
 Update progress.yaml with concepts learned.
 

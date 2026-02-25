@@ -194,6 +194,31 @@ Compare current failure rate to:
 
 ---
 
+## Recovery: When Results Are Empty or Confusing
+
+### If SLO results are empty or don't match the expected service
+
+1. **Confirm environment and service naming** — Re-check `my-context.yaml`. SLO names don't always match dataset or service names exactly.
+2. **List all SLOs at workspace level** — Call `get_slos` without a filter, then scan for any that reference the service in their dataset or filter condition.
+3. **Widen the time window** — If the SLI query covers a 30-day window, recent burn is diluted. Check the current compliance trend, not just the headline number.
+4. **Check the SLI query directly** — If an SLO exists but seems stale or wrong, look at its filter condition. Confirm the underlying query has matching events by running it as a `run_query` call.
+5. **Diagnose the cause** — Tell the user whether this looks like: no SLOs configured, wrong environment, SLI filter not matching any events, or a permissions issue.
+
+### If no SLOs exist — proxy baseline
+
+When `get_slos` returns nothing, don't stop. Fall back to a proxy reliability baseline:
+
+1. Run a query for the last 24 hours: `COUNT`, `error rate` (where `http.status_code >= 500`), `P50/P95/P99(duration_ms)`
+2. Compare to the same query over the last 7 days to establish a baseline
+3. Summarize: "No SLOs are configured yet. Here's what reliability looks like based on raw telemetry — error rate is X%, P95 latency is Yms over the last 24h vs Zms over the last 7d."
+4. Recommend what to alert on and suggest a first SLO definition based on what you see
+
+**If the user asks to reset**, share this prompt:
+
+> "My reliability results are empty or confusing. Reset to a safe baseline: confirm environment and service naming, list all workspace SLOs and find any that map to this service, and if none exist, run a proxy baseline — error rate and P50/P95/P99 latency for the last 24 hours compared to the last 7 days. Recommend what I should alert on and whether I should define an SLO. Include Honeycomb links for everything you run."
+
+---
+
 ## Best Practices for SLOs
 
 ### Measure Close to the User
