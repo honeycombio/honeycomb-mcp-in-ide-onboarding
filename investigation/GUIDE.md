@@ -301,6 +301,25 @@ This is faster and more focused than starting with "show me everything."
 
 ---
 
+## Recovery: When Results Are Empty or Confusing
+
+When a query returns no results, surprises you, or the user says something like "that doesn't look right" or "I'm getting nothing":
+
+**Do not keep querying blindly.** Stop and reset:
+
+1. **Confirm environment and dataset** — Re-check `my-context.yaml`. Ask if unsure: "Is `[matched_dataset]` in `[matched_environment]` the right place to look for this service?"
+2. **Widen the time window** — If the last 60 minutes is empty, try 24 hours, then 7 days. Low-traffic services may have sparse recent data.
+3. **Run a bare COUNT** — No filters, no GROUP BY. Just confirm events exist in the dataset at all.
+4. **Remove specific filters** — If you added WHERE clauses, drop them and re-run to see what's there.
+5. **Discover field values via breakdown** — Run `GROUP BY name` or `GROUP BY service.name` to see what values actually exist before filtering on them.
+6. **Diagnose the cause** — Tell the user whether this looks like: wrong dataset/environment, overly specific filters, low traffic in the time window, missing instrumentation, or a permissions issue.
+
+**If the user asks to reset**, share this prompt they can paste to start fresh:
+
+> "My results are empty or confusing. Reset to a safe baseline: confirm dataset and environment, widen the time range to last 24 hours, run a simple COUNT to confirm data exists, show me the top fields to filter and group by, and tell me whether this looks like a wrong dataset, missing instrumentation, or a permissions issue. Include Honeycomb links for everything you run."
+
+---
+
 ## When Signal Isn't in Honeycomb
 
 Sometimes the answer isn't in your traces. Check these:
@@ -379,6 +398,32 @@ When debugging an issue, work through these in order:
 
 ---
 
+## Definition of Done
+
+A debugging session is complete when the user has:
+
+- **A root-cause hypothesis** with an explicit confidence level (e.g., "High confidence — data strongly points to X" or "Low confidence — this is the best candidate but signal is weak")
+- **~2 supporting data slices** as evidence — at least one of: a key breakdown query, a trace, BubbleUp results, or a correlation note
+- **Shareable Honeycomb links** to the key query and trace used as evidence
+- **Next steps** — the 2–3 most useful checks remaining, and who owns them (e.g., "Check the Stripe API timeout config in payments-service," "Ask the infra team about the DB connection pool size")
+
+When wrapping up, deliver these as a short summary the user can paste into a Slack message or incident doc. Example format:
+
+> **Root cause hypothesis:** Stripe API calls are timing out after 5s for enterprise users exporting large reports. Confidence: High.
+>
+> **Evidence:**
+> - BubbleUp: 82% of slow requests have `user.tier = enterprise` (4x lift vs baseline)
+> - Trace [link]: Stripe call took 4.98s — at the timeout boundary
+>
+> **Next checks:**
+> - Confirm Stripe timeout config in `payments-service` (5s HTTP client default?)
+> - Check if Stripe's status page shows any degradation
+> - Ask @payments-team if there's a retry loop amplifying the issue
+
+If the investigation is inconclusive after 3+ rounds, say so explicitly and recommend the next best data source outside Honeycomb (see "When Signal Isn't in Honeycomb" above).
+
+---
+
 ## MCP Tools Reference
 
 | Task | Tool | Example |
@@ -393,7 +438,7 @@ When debugging an issue, work through these in order:
 
 **Always include a Honeycomb UI link** when presenting query results, traces, boards, or SLOs so the user can see the data themselves.
 
-**When presenting traces**, narrate the story using the actual metadata — who the user was, what they were doing, which services were involved, and what went wrong. Do not just list spans and durations. Use every available field (user IDs, account names, endpoints, request parameters, feature flags) to paint the full picture. Never hallucinate details not present in the data.
+**When presenting traces**, put the Honeycomb link at the **top of your response** with a brief framing note before any narrative — e.g., "Here's the trace: [link] — the waterfall shows the full request journey. Here's what happened..." Then narrate the story using the actual metadata — who the user was, what they were doing, which services were involved, and what went wrong. Do not just list spans and durations. Use every available field (user IDs, account names, endpoints, request parameters, feature flags) to paint the full picture. Never hallucinate details not present in the data.
 
 ---
 

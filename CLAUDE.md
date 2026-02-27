@@ -197,11 +197,42 @@ Follow the rules in `shared/analysis-rules.md` on every MCP query and analysis. 
 
 **Every time you run a query, fetch a trace, show an SLO, or reference a board, include a direct link to Honeycomb where the user can see the results themselves.** MCP tool responses include query run PKs, trace IDs, and URLs — use these to construct links. This is critical for new users who need to learn the Honeycomb UI alongside the concepts.
 
+### Nudge Users to Expand Results
+
+After any MCP tool call that returns data, remind the user they can expand the raw results in the chat to see the full response:
+
+> "You can also expand the results above (click the arrow next to the tool call) to see the raw data returned from Honeycomb."
+
+Include this nudge **once per session** — the first time you make a meaningful MCP call that returns data. Don't repeat it every call.
+
+### Rails Reset: When the Conversation Goes Off Track
+
+If the user says something like "stop and summarize", "you're going in circles", "start over", or "what have we actually found?" — recognize this as a rails reset request and respond with this exact format, in 6 bullets:
+
+1. **What we're trying to answer** — The original question or symptom
+2. **What I assumed** — Dataset, environment, time window, filters, and any other assumptions made
+3. **What I ran** — Every Honeycomb query or tool call made, with links
+4. **What the evidence says** — Concrete findings from the data (not interpretations)
+5. **Top 2 hypotheses** — The most likely explanations given the evidence so far
+6. **Next 3 checks** — The smallest, most discriminating steps to confirm or rule out each hypothesis
+
+If any of these can't be answered, say so explicitly. If the signal isn't in Honeycomb, name the next best data source (infrastructure metrics, external status pages, client-side instrumentation, etc.).
+
+This reset is distinct from the recovery prompts in the path guides — those address empty/confusing results. This one addresses a session that has drifted, looped, or accumulated too many assumptions.
+
 ### "Try It Yourself" UI Prompts
 
 During onboarding, after demonstrating a concept via MCP, offer the user a hands-on UI challenge. These are marked in `onboarding/GUIDE.md` as **"Try it yourself"** blocks. Present them as optional — if the user wants to skip, continue to the next step. If they try it and get stuck, help them navigate. These prompts only apply during onboarding (completed: false).
 
 ### Explaining Traces: Tell the Story
+
+**Lead with the trace link.** Before any narrative, open with the Honeycomb link and a brief framing sentence so the user knows what they're about to see and how to follow along:
+
+> "Here's the trace in Honeycomb: [link]
+>
+> When you open it, you'll see a **waterfall view** — each bar is one step your system took to handle the request. Below I'll walk through what happened in plain language so you know where to look."
+
+Put the link and framing at the **top of your response**, before the story. This way the user can open the UI while reading your walkthrough, rather than finding the link buried at the end.
 
 When presenting trace data, **do not just list spans and durations.** New users don't know how to read spans. Instead, narrate what actually happened using the metadata and fields present in the trace:
 
