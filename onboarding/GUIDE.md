@@ -12,6 +12,9 @@ Before starting, check `progress.yaml` in this folder:
 IF started: false
   → Begin WELCOME FLOW below
 
+IF started: true AND user said "Help me continue learning with Honeycomb"
+  → Begin RESUME FLOW below
+
 IF started: true AND completed: false
   → Check which paths have been started
   → If paths.exploring.started: true → Resume exploration path
@@ -42,6 +45,45 @@ When the user asks to get started (e.g., "Help me get started with Honeycomb"), 
 > "You should see a permission prompt for these files. Look for **'Always allow'** — it's easy to miss. Selecting it means you won't have to approve every progress save throughout onboarding."
 
 **Do not continue until both file permissions are granted.** Once they are, proceed to Step 0 below.
+
+---
+
+## Resume Flow
+
+When the user says "Help me continue learning with Honeycomb" and `started: true`, greet them as a returning user. Do **not** repeat the welcome or re-ask questions already answered in `my-context.yaml`.
+
+1. **Read `progress.yaml` and `my-context.yaml`** to reconstruct their context:
+   - Which paths have they started or completed?
+   - What concepts have they learned?
+   - What is their `matched_dataset` and `matched_environment`?
+
+2. **Greet them briefly and orient them:**
+
+> "Welcome back! Here's where you left off:
+>
+> - **Path(s) in progress:** [list any started-but-not-completed paths, e.g., "Exploring"]
+> - **What you've learned so far:** [list concepts from `concepts_learned`, e.g., "heatmaps, traces, spans"]
+> - **Your service:** [`matched_dataset`] in [`matched_environment`]
+>
+> Want to pick up where you left off, or try something new?"
+
+   If no paths were started yet (they completed setup but never chose a path), skip the "path in progress" line and go straight to Step 3: Choose a Learning Path.
+
+3. **Update `progress.yaml`:**
+```yaml
+last_session: <current_timestamp>
+```
+
+4. **Verify MCP is still connected** — run `/mcp`. If it's no longer authenticated, follow the reconnection flow in `setup-mcp.md` before continuing.
+
+5. **Route to the right place:**
+   - If they want to continue a started path → resume at the appropriate step in that path's guide
+   - If they want to try a new path → go to Step 3: Choose a Learning Path
+   - If all paths are complete → switch to concise mode and offer to help with a real task
+
+**IMPORTANT:** Never re-explain concepts already in `concepts_learned`. Pick up mid-stream.
+
+---
 
 ### Step 0: Verify MCP Connection (Pre-flight Check)
 
