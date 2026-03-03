@@ -83,6 +83,7 @@ Users can work on multiple paths. If they've already completed one path and star
 | User Intent | Guide to Follow | Updates to progress.yaml |
 |-------------|-----------------|--------------------------|
 | Getting started (first time) | `onboarding/GUIDE.md` welcome flow | Set `started: true` |
+| Returning user ("Help me continue learning with Honeycomb") | `onboarding/GUIDE.md` resume flow | Update `last_session` |
 | Debugging an issue, investigating | `investigation/GUIDE.md` | Set `paths.debugging.started: true` |
 | Exploring data, building mental models | `onboarding/GUIDE.md` exploration sections | Set `paths.exploring.started: true` |
 | Understanding SLOs/reliability | `slo-basics/GUIDE.md` | Set `paths.reliability.started: true` |
