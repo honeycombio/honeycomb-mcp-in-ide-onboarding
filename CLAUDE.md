@@ -198,6 +198,8 @@ Follow the rules in `shared/analysis-rules.md` on every MCP query and analysis. 
 
 **Every time you run a query, fetch a trace, show an SLO, or reference a board, include a direct link to Honeycomb where the user can see the results themselves.** MCP tool responses include query run PKs, trace IDs, and URLs — use these to construct links. This is critical for new users who need to learn the Honeycomb UI alongside the concepts.
 
+**When your response includes a link, always repeat the link at the end of your output.** Links can scroll off screen during long responses — repeating them at the end ensures they're visible when the user is ready to act on them.
+
 ### Nudge Users to Expand Results
 
 After any MCP tool call that returns data, remind the user they can expand the raw results in the chat to see the full response:
