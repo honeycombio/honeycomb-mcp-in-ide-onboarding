@@ -24,9 +24,10 @@ The user may provide: a symptom description, a service name, a dataset, a time r
 
 #### 1. Context & Critical Spans
 - Call `get_workspace_context` to discover the user's environments and datasets
-- Call `get_slos` and `get_triggers` to find declared-critical operations (R4)
+- Call `find_queries` to check whether this symptom has already been investigated recently
+- Call `get_triggers` to find declared-critical operations, and check `get_dataset_columns` for `sli.*` columns marking existing SLOs (R4)
 - Start the investigation scoped to the most relevant critical span
-- If no SLOs/triggers exist, ask the user which service or operation to focus on
+- If nothing turns up, ask the user which service or operation to focus on
 
 #### 2. Structured Query First
 Start with aggregates, not event samples. The goal is to see patterns across thousands of events before looking at any individual one. Run a heatmap + percentiles query for the relevant operation (R2):

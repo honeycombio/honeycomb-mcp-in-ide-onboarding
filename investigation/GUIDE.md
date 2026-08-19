@@ -6,11 +6,12 @@ This guide encodes expert debugging heuristics for investigating issues in Honey
 
 ## The Core Analysis Loop
 
-1. **Start broad** — Query for anomalies (errors, slow requests, unusual patterns)
-2. **Identify outliers** — Use heatmaps to spot unusual distributions
-3. **BubbleUp** — Compare anomalies to baseline to find correlations
-4. **Drill into traces** — Examine individual requests to confirm hypotheses
-5. **Iterate** — Refine queries based on what you learn
+1. **Check for prior work** — `find_queries` for anything matching this symptom before running a fresh query; no point re-deriving an investigation from scratch if a teammate already ran it this week
+2. **Start broad** — Query for anomalies (errors, slow requests, unusual patterns)
+3. **Identify outliers** — Use heatmaps to spot unusual distributions
+4. **BubbleUp** — Compare anomalies to baseline to find correlations
+5. **Drill into traces** — Examine individual requests to confirm hypotheses
+6. **Iterate** — Refine queries based on what you learn
 
 ---
 
@@ -275,14 +276,21 @@ SLOs and triggers encode institutional knowledge — the team has already decide
 
 ### How to Find Critical Spans
 
-```
-# 1. Check SLOs — these define the operations with reliability targets
-get_slos → note the SLI definitions (dataset, filter, success criteria)
+There's no MCP tool that lists SLOs directly, so combine two signals:
 
-# 2. Check triggers — these define conditions the team wants alerts for
+```
+# 1. Check triggers — these define conditions the team wants alerts for,
+#    and SLO burn alerts often appear here too
 get_triggers → note the query conditions and thresholds
 
-# 3. Start your investigation scoped to a critical span
+# 2. Check the dataset schema for existing SLI definitions
+get_dataset_columns → look for `sli.*`-prefixed derived columns → note the expression
+   (the boolean success criteria an SLO is built on)
+
+# 3. Send a direct link to the Honeycomb SLOs page so the user can confirm
+#    what's actually configured, since nothing in MCP can list them
+
+# 4. Start your investigation scoped to a critical span
 run_query:
   VISUALIZE: HEATMAP(duration_ms), P50(duration_ms), P95(duration_ms), P99(duration_ms)
   WHERE: <SLO/trigger filter conditions>
@@ -291,8 +299,8 @@ run_query:
 
 ### Example Workflow
 
-1. `get_slos` reveals a "checkout-latency" SLO targeting P99 < 500ms
-2. The SLO is burning budget — P99 is at 850ms
+1. `get_dataset_columns` reveals a `sli.checkout_latency_good` derived column, filtering on `LT($duration_ms, 500)`
+2. Querying that column directly shows only 62% of recent checkout requests pass it — well below a presumed 99.9% target
 3. Start with `run_query` filtered to checkout spans, not a broad dataset scan
 4. Use BubbleUp on the slow checkout requests specifically
 5. Drill into traces from the failing population
@@ -429,12 +437,12 @@ If the investigation is inconclusive after 3+ rounds, say so explicitly and reco
 | Task | Tool | Example |
 |------|------|---------|
 | Start investigation | `get_workspace_context` | Understand what's instrumented |
+| Check for prior work | `find_queries` | See if this has already been investigated |
 | Find anomalies | `run_query` with HEATMAP | Visual distribution analysis |
 | Find correlations | `run_bubbleup` | Compare selection to baseline |
 | Examine one request | `get_trace` | Drill into specific trace ID |
-| Check SLO status | `get_slos` | See if reliability is at risk |
+| Check SLO status | `get_dataset_columns` + `run_query` | Find `sli.*` columns, query directly for compliance |
 | Discover fields | `find_columns` | Find what attributes exist |
-| See service relationships | `get_service_map` | Understand dependencies |
 
 **Always include a Honeycomb UI link** when presenting query results, traces, boards, or SLOs so the user can see the data themselves.
 

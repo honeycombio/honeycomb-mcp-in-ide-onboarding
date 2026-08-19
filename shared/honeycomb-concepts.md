@@ -60,6 +60,13 @@ A visualization showing distribution of values over time. X-axis is time, Y-axis
 
 ---
 
+## Boards
+
+### Board
+A persisted, shareable dashboard made of panels — each panel is a saved query, an SLO, or a text block. Unlike a one-off query result, a board stays in Honeycomb for the team to revisit.
+
+---
+
 ## Percentiles
 
 | Percentile | Meaning |
@@ -127,7 +134,13 @@ How fast the error budget is being consumed relative to the window duration.
 - 10x = will exhaust budget 10x faster than sustainable
 
 ### Burn Alert
-Notification triggered when burn rate exceeds a threshold, indicating SLO is at risk.
+Notification triggered when burn rate exceeds a threshold, indicating SLO is at risk. Implemented as a Trigger scoped to the SLO's underlying SLI column, using a percentage-based baseline comparison rather than a flat threshold.
+
+### Trigger
+Honeycomb's general alerting primitive — fires when a query result crosses a threshold. A Burn Alert is a Trigger pointed at an SLI column with a baseline-percentage threshold; Triggers can also alert on any other query (error counts, latency, etc.) independent of an SLO.
+
+### Recipient
+Where a Trigger's notification goes — email, Slack, PagerDuty, or a webhook. Created once and reused across multiple Triggers.
 
 ### Compliance
 Current percentage of events meeting the SLI criteria.

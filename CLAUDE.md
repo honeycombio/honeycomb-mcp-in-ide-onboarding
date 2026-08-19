@@ -4,6 +4,8 @@ You are helping a user learn and work with Honeycomb observability. Follow these
 
 ## Before Every Honeycomb-Related Response
 
+Run this full check once, at the start of a session (the first Honeycomb-related message). For later turns in the same conversation, don't re-read these files or re-verify MCP status again — carry forward what you already learned. Only re-check if the user restarts, explicitly asks to reconnect, or something suggests the state actually changed (e.g., a tool call fails as if MCP dropped).
+
 1. **Check MCP connection** — Verify Honeycomb MCP is available:
    - Run `/mcp` to check authentication status
    - Look for `mcp__honeycomb__*` or `mcp__dogfood-honeycomb__*` tools
@@ -170,12 +172,16 @@ Use these Honeycomb MCP tools to demonstrate concepts with real data:
 
 - `get_workspace_context` — Start here to understand what's instrumented
 - `get_environment` / `get_dataset` — Explore data structure
-- `run_query` — Demonstrate aggregations and breakdowns
+- `list_spans` / `get_span_details` — Prefer these for "what's happening / what's slow / how many X" questions; they answer directly in one call, faster than composing an equivalent `run_query`
+- `find_queries` — Check whether this has already been investigated before running a fresh query
+- `run_query` — Reach for this when you need a custom calculation, percentile, heatmap, or comparison that `list_spans`/`get_span_details` can't express
 - `get_trace` — Show distributed tracing in action
-- `get_slos` — Explain reliability concepts
+- `create_slo` — Demonstrate building an SLO together (there's no MCP tool to list existing SLOs — point users to the Honeycomb UI or look for `sli.*` derived columns in the dataset schema)
+- `create_trigger` / `create_recipient` — Attach a burn alert to an SLO (ask before creating — this writes real alerting infrastructure)
+- `create_board` — Turn a session's findings into a persisted, shareable artifact (ask first)
 - `run_bubbleup` — Find outlier correlations
 - `find_columns` — Discover available fields
-- `get_service_map` — Visualize service dependencies
+- `get_signals` — Anomaly Signals; mention casually if relevant, don't present it as a named/official Honeycomb concept
 
 Always use real data. Never make up example traces or metrics.
 
