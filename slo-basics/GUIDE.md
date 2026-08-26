@@ -22,7 +22,7 @@ An **SLO (Service Level Objective)** is a target for how reliable your service s
 
 ## Anatomy of an SLO in Honeycomb
 
-When you call `get_slos`, you'll see:
+An SLO has this shape:
 
 ```yaml
 name: "checkout-success"
@@ -36,6 +36,8 @@ status: "Normal"       # Or "Triggered" if burning too fast
 compliance: 99.94      # Current compliance percentage
 budget_remaining: 85   # Percentage of error budget left
 ```
+
+**There's no single MCP tool that returns this whole object.** `create_slo` and `update_slo` can write one, but nothing reads one back. To approximate it yourself: the `sli` portion shows up as a `sli.*`-prefixed derived column in the dataset's schema (`get_dataset_columns`) — query it directly with `run_query` to compute `compliance` by hand. `status`, `target`, and `budget_remaining` live only in the SLO object itself, so for those, send the user a direct link to the Honeycomb SLOs page.
 
 ### Reading SLO Status
 
@@ -113,6 +115,27 @@ Honeycomb can alert when burn rate exceeds a threshold:
 
 Configure alerts to match your response capabilities. No point alerting on fast burns at 3am if no one will respond.
 
+**Setting one up:** A burn alert is a `create_trigger` call scoped to the SLO's own `sli.*` column, using `baseline_details` for the percentage comparison rather than a flat threshold:
+
+```
+create_trigger(
+  name: "checkout-availability-fast-burn",
+  environment_slug: "<their environment>",
+  dataset_slug: "checkout-service",
+  query: {
+    calculations: [{ op: "COUNT" }],
+    filters: [{ column: "sli.checkout_available", op: "=", value: false }]
+  },
+  baseline_details: { type: "percentage", offset_minutes: 60 },
+  threshold: { op: ">=", value: 14 },   # 14x = fast burn
+  recipients: ["<recipient_id>"]
+)
+```
+
+You need a recipient before this works — check `list_recipients` for an existing destination, or create one with `create_recipient` (email, Slack, PagerDuty, or webhook). This isn't a separate alerting feature to teach on its own — it's the last piece of finishing the SLO you already built.
+
+**Ask before creating either.** Both write real, notifying infrastructure into the user's environment.
+
 ---
 
 ## When to Worry
@@ -144,12 +167,10 @@ When an SLO is at risk, follow this workflow:
 ### Step 1: Understand the SLO Definition
 
 ```
-Call: get_slos with slo_id
-
-Check:
-- What is the SLI measuring?
-- What counts as success/failure?
-- What time period is this over?
+There's no tool to fetch an SLO by ID. Instead:
+- Find its sli.* derived column via get_dataset_columns and read the expression
+  to see what counts as success/failure
+- Send the user a link to the Honeycomb SLOs page to confirm the target and time period
 ```
 
 ### Step 2: Find the Failing Events
@@ -199,23 +220,24 @@ Compare current failure rate to:
 ### If SLO results are empty or don't match the expected service
 
 1. **Confirm environment and service naming** — Re-check `my-context.yaml`. SLO names don't always match dataset or service names exactly.
-2. **List all SLOs at workspace level** — Call `get_slos` without a filter, then scan for any that reference the service in their dataset or filter condition.
-3. **Widen the time window** — If the SLI query covers a 30-day window, recent burn is diluted. Check the current compliance trend, not just the headline number.
-4. **Check the SLI query directly** — If an SLO exists but seems stale or wrong, look at its filter condition. Confirm the underlying query has matching events by running it as a `run_query` call.
-5. **Diagnose the cause** — Tell the user whether this looks like: no SLOs configured, wrong environment, SLI filter not matching any events, or a permissions issue.
+2. **Send a link to the Honeycomb SLOs page** — There's no MCP tool to list SLOs, so ask the user to confirm what exists there rather than guessing from data alone.
+3. **Check the dataset schema for `sli.*` columns** — `get_dataset_columns` on the relevant dataset(s), scanning for any that reference the service.
+4. **Widen the time window** — If the SLI query covers a 30-day window, recent burn is diluted. Check the current compliance trend, not just the headline number.
+5. **Check the SLI query directly** — If a `sli.*` column exists but seems stale or wrong, look at its expression. Confirm the underlying query has matching events by running it as a `run_query` call.
+6. **Diagnose the cause** — Tell the user whether this looks like: no SLOs configured, wrong environment, SLI filter not matching any events, or a permissions issue.
 
 ### If no SLOs exist — proxy baseline
 
-When `get_slos` returns nothing, don't stop. Fall back to a proxy reliability baseline:
+When neither the SLOs page nor the dataset schema turns up anything, don't stop. Fall back to a proxy reliability baseline:
 
 1. Run a query for the last 24 hours: `COUNT`, `error rate` (where `http.status_code >= 500`), `P50/P95/P99(duration_ms)`
 2. Compare to the same query over the last 7 days to establish a baseline
 3. Summarize: "No SLOs are configured yet. Here's what reliability looks like based on raw telemetry — error rate is X%, P95 latency is Yms over the last 24h vs Zms over the last 7d."
-4. Recommend what to alert on and suggest a first SLO definition based on what you see
+4. Recommend what to alert on, and **ask** whether the user wants to define a first SLO together — don't create one unprompted.
 
 **If the user asks to reset**, share this prompt:
 
-> "My reliability results are empty or confusing. Reset to a safe baseline: confirm environment and service naming, list all workspace SLOs and find any that map to this service, and if none exist, run a proxy baseline — error rate and P50/P95/P99 latency for the last 24 hours compared to the last 7 days. Recommend what I should alert on and whether I should define an SLO. Include Honeycomb links for everything you run."
+> "My reliability results are empty or confusing. Reset to a safe baseline: confirm environment and service naming, send me a link to the Honeycomb SLOs page and check the dataset schema for `sli.*` columns that map to this service, and if none exist, run a proxy baseline — error rate and P50/P95/P99 latency for the last 24 hours compared to the last 7 days. Recommend what I should alert on and ask whether I should define an SLO. Include Honeycomb links for everything you run."
 
 ---
 
@@ -275,7 +297,9 @@ success_criteria: http.status_code < 500
 
 Before deploying:
 ```
-Call: get_slos
+There's no tool to fetch budget remaining directly. Send a link to the
+Honeycomb SLOs page and ask the user to confirm current budget, or compute
+compliance yourself from the sli.* column and compare to the known target.
 
 Check: Do you have error budget to absorb potential issues?
 - Budget > 30%: Safe to deploy
@@ -329,16 +353,43 @@ target: 99.9%
 
 ---
 
+## Creating Your First SLO
+
+If nothing already exists for a service, `create_slo` is the tool that builds one — but only after asking the user, since it creates a real, permanent object in their Honeycomb environment.
+
+Using the availability pattern above as an example:
+
+```
+create_slo(
+  name: "checkout-availability",
+  environment_slug: "<their environment>",
+  dataset_slugs: ["checkout-service"],
+  sli: { alias: "sli.checkout_available", expression: "LT($http.status_code, 500)" },
+  target_per_million: 999000,   # 99.9%
+  time_period_days: 30
+)
+```
+
+`target_per_million` is the target multiplied by 10,000 (99.9% → 999000). The tool auto-creates the underlying `sli.*` derived column, so there's nothing extra to set up.
+
+**Ask before calling this.** A permission prompt confirms the tool call, but not whether the user actually wants a new SLO in their live environment — say what it'll create and why, and only proceed if they say yes.
+
+---
+
 ## MCP Tools for SLO Work
 
 | Task | Tool |
 |------|------|
-| List all SLOs | `get_slos` |
-| Get SLO details | `get_slos` with `slo_id` |
+| Discover an existing SLO | `get_dataset_columns` (look for `sli.*` columns) |
+| Confirm what's actually configured | Send a link to the Honeycomb SLOs page — no tool lists SLOs directly |
+| Compute current compliance | `run_query` against the `sli.*` column |
+| Create a new SLO | `create_slo` (ask the user first — this writes to their real environment) |
+| Adjust an existing SLO | `update_slo` |
+| Find a destination for alerts | `list_recipients`, or `create_recipient` if none exists |
+| Attach a burn alert to the SLO | `create_trigger` scoped to the `sli.*` column with `baseline_details` (ask first — this writes real alerting infrastructure) |
 | Find failing events | `run_query` with failure filter |
 | Analyze failures | `run_bubbleup` |
 | Examine specific failure | `get_trace` |
-| Check service health | `get_service_map` |
 
 ---
 

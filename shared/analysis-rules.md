@@ -6,15 +6,12 @@ These rules apply silently to every MCP query and analysis. Do not explain them 
 
 ## R1: Baselines
 
-When identifying anomalies, compare against at least two baselines:
+When identifying anomalies, default to two baselines: a period-over-period comparison (previous hour, or same time yesterday — whichever suits the query's time window) plus a week-over-week comparison (same day last week). State the comparison explicitly: "P95 is 450ms vs 220ms same time yesterday — a 2x increase."
 
-- Previous hour
-- Same time yesterday
-- Same day last week
-- Same date last month (catches monthly billing cycles, batch jobs, report generation)
-- Same day-of-week last month (catches weekly patterns that shift with calendar dates)
+Add more only when relevant, not as a standing requirement:
 
-State the comparison explicitly: "P95 is 450ms vs 220ms same time yesterday — a 2x increase."
+- Same date last month — when a monthly billing cycle, batch job, or report generation is suspected
+- Same day-of-week last month — when a weekly pattern that shifts with calendar dates is suspected
 
 ## R2: Heatmap + Percentiles
 
@@ -26,7 +23,7 @@ Before any `GROUP BY` analysis, check whether the dataset contains multiple span
 
 ## R4: Critical Spans
 
-Before exploring broadly, check SLOs (`get_slos`) and triggers (`get_triggers`) to identify the 1–2 operations the team has already declared critical. Start investigations there — these spans have defined "good" thresholds and are what the team cares about most.
+Before exploring broadly, check triggers (`get_triggers`) to identify the 1–2 operations the team has already declared critical — SLO burn alerts often show up here too. There's no MCP tool to list SLOs directly: also check the dataset schema (`get_dataset_columns`) for `sli.*`-prefixed derived columns, which mark an existing SLO's success criterion, and send the user a direct link to the Honeycomb SLOs page for the full picture. Start investigations from whatever critical scope you find — these spans have defined "good" thresholds and are what the team cares about most.
 
 ## R5: BubbleUp Validation
 

@@ -554,21 +554,18 @@ When queries return no data, the service name doesn't match, or the user seems l
 
 ### Exploration Step 4: Discover SLOs
 
-**Action:** Call `get_slos` for the environment. **Include the Honeycomb link to the SLOs page so the user can explore them in the UI.**
+**Action:** There's no MCP tool that lists SLOs directly, so discovery has two parts:
 
-> "Your team has set up **SLOs** (Service Level Objectives) to define what 'good' looks like. Let's see what they're tracking..."
-
-Summarize the SLOs found and include a direct link:
-
-> "Here are the SLOs your team is tracking — you can see them all in the Honeycomb UI here: [link]"
+1. **Send a direct link to the Honeycomb SLOs page** for this environment so the user can see what's configured: "Your team may have set up **SLOs** (Service Level Objectives) to define what 'good' looks like — here's where to check: [link]"
+2. **Check the dataset schema** (`get_dataset_columns`) for any `sli.*`-prefixed derived columns — these back an existing SLO's success criterion. If found, `run_query` against one to show current compliance without leaving the chat.
 
 **Also check triggers:** Call `get_triggers` for the environment. If triggers exist, summarize them:
 
 > "Your team also has **triggers** set up — these are alerts that fire when a metric crosses a threshold. You can see them here: [link]"
 
-If no SLOs exist:
+If nothing turns up in either check:
 
-> "No SLOs are configured yet. SLOs are a way to say 'we promise 99.9% of requests will succeed' and track that automatically. Want me to explain how they work?"
+> "I don't see an SLO backing this dataset, and there's no way for me to list SLOs directly — worth a quick look at [link] to confirm. SLOs are a way to say 'we promise 99.9% of requests will succeed' and track that automatically. Want me to explain how they work, or walk through creating one together?"
 
 ---
 
@@ -600,12 +597,18 @@ Before wrapping up, produce a **service cheat sheet** for the user. This is the 
 
 Only include fields and values actually observed in the session. Do not invent baselines.
 
+**Low-key check:** Call `get_signals` for the environment. If anything active comes back, mention it plainly without naming it as a formal feature — e.g., "Honeycomb's also flagging a few things that look off from this service's normal pattern, worth a look: [link]." Skip this line entirely if nothing comes back.
+
+**Offer to persist this as a board.** The cheat sheet is useful, but it disappears when the chat ends. Ask: "Want me to turn this into a real Honeycomb board you can bookmark and share? It'll have your baseline queries and this summary as a text panel." Only proceed if the user says yes:
+1. Call `list_boards` first to check whether a similar board already exists for this service
+2. If not, call `create_board` with a text panel containing the cheat sheet content plus query panels for the baseline queries run this session
+3. Share the board link
+
 Then offer next steps:
 
 > "Want to go deeper?
 > - Debug a specific slow request (debugging path)
-> - Check your SLOs and error budgets (reliability path)
-> - Explore the service map to see how services connect"
+> - Check your SLOs and error budgets (reliability path)"
 
 Update progress.yaml with concepts learned.
 
@@ -615,11 +618,14 @@ Update progress.yaml with concepts learned.
 
 ### Reliability Step 1: What Are SLOs?
 
-**Action:** Call `get_slos` to fetch current SLOs. **Include the Honeycomb link to the SLOs page.**
+**Action:** There's no MCP tool that lists SLOs directly. Discover what exists in two ways, then include the Honeycomb SLOs page link either way:
+
+1. **Check the dataset schema** (`get_dataset_columns`) for `sli.*`-prefixed derived columns — these back an existing SLO's success criterion. If found, `run_query` against it to show current compliance.
+2. **Send the direct link** to the Honeycomb SLOs page for this environment so the user can confirm what's actually configured: "Here's where to check your SLOs directly: [link]"
 
 **Also check triggers:** Call `get_triggers` for the environment. Triggers are alerts tied to specific queries — they're often the first signal that something is wrong.
 
-**If no SLOs exist**, don't stop at "nothing configured." Run a proxy reliability baseline immediately so the user still leaves with useful data:
+**If nothing turns up** (no `sli.*` columns, and the user confirms nothing's in the UI), don't stop there — run a proxy reliability baseline immediately so the user still leaves with useful data:
 
 1. Run `COUNT` + error rate (`http.status_code >= 500`) + `P50/P95/P99(duration_ms)` for the last 24 hours
 2. Run the same query for the last 7 days to establish a comparison baseline
@@ -632,6 +638,8 @@ Update progress.yaml with concepts learned.
 > - [Link to query]
 >
 > Based on this, I'd suggest alerting on [specific field/threshold]. A good first SLO would be: [concrete recommendation — e.g., '99% of POST /checkout requests succeed within 2s']."
+
+**Ask before creating anything.** Once you have a concrete recommendation, offer it as a question, not an action: "Want to create this SLO together? It'll be a real SLO in your Honeycomb environment — a good way to see how the pieces fit, but only if you want one there." Only call `create_slo` if the user says yes.
 
 Then continue with the SLO explanation below so the user understands what SLOs are and why this matters.
 
@@ -655,7 +663,7 @@ If triggers were found:
 **Try it yourself:** Find the SLOs page in the Honeycomb UI.
 
 1. In the left sidebar, click **SLOs**
-2. You'll see the list of SLOs we just reviewed — find one and click into it
+2. Find one (either one you already had, or the one you just created) and click into it
 3. Look at the **Budget Burndown** graph — it shows how error budget is being consumed over time
 4. Check the **Burn Alerts** section at the bottom — these fire when the budget is burning too fast
 
@@ -686,9 +694,30 @@ If an SLO shows a declining budget line, click **View SLI** to jump to the under
 
 ---
 
-### Reliability Step 3: Investigating a Burning SLO
+### Reliability Step 3: Attaching a Burn Alert
 
-If any SLO is in a concerning state (triggered or burning fast):
+If the user created or found an SLO in Step 1, offer to finish it with a burn alert — this is what actually notifies someone when the error budget is draining too fast.
+
+**Action:**
+1. Call `list_recipients` to see if a suitable destination (email, Slack channel, etc.) already exists
+2. If not, ask the user where alerts should go and call `create_recipient` to set one up
+3. Call `create_trigger` scoped to the SLO's own `sli.*` column, using `baseline_details` for the burn-rate comparison rather than a flat threshold — e.g., a fast-burn alert compares the current failure count to 14x the same window one hour ago
+
+> "Want to set up a burn alert for this SLO? It'll notify you if the error budget starts draining fast — I'll point it at the same `sli.*` column we've been looking at, so the alert tracks exactly what the SLO tracks."
+
+**Ask before creating anything** — this writes real, notifying infrastructure into the user's environment. Only proceed if they say yes.
+
+**Explain (if "burn_alerts" not in concepts_learned):**
+
+> "A **burn alert** is just a **trigger** — Honeycomb's general alerting mechanism — pointed at your SLO's success criteria and compared against a recent baseline. A **fast burn** (e.g., 14x over 1 hour) means an acute incident; a **slow burn** (e.g., 2x over 24 hours) means gradual degradation. Set the fast one to page someone, the slow one to just notify."
+
+**Update progress.yaml:** Add `burn_alerts`, `triggers` to `concepts_learned`.
+
+---
+
+### Reliability Step 4: Investigating a Burning SLO
+
+If the compliance you computed against an `sli.*` column looks concerning (below target, or trending down), or the user reports from the UI that an SLO is triggered or burning fast:
 
 **Action:** **Include Honeycomb links for every query and trace in this investigation.**
 1. Note which SLO is at risk
@@ -703,7 +732,7 @@ Walk through the investigation using the debugging techniques from Path A.
 
 ---
 
-### Reliability Step 4: Connecting SLOs to Traces
+### Reliability Step 5: Connecting SLOs to Traces
 
 > "When an SLO is at risk, you can drill down to individual traces to find root causes.
 >
@@ -715,7 +744,7 @@ Walk through the investigation using the debugging techniques from Path A.
 
 ---
 
-### Reliability Step 5: Wrap Up
+### Reliability Step 6: Wrap Up
 
 Before wrapping up, deliver a **reliability snapshot** — a short summary the user can share with their team.
 
@@ -724,20 +753,20 @@ Before wrapping up, deliver a **reliability snapshot** — a short summary the u
 > "Here's the reliability snapshot for `[service name]`:
 >
 > **SLOs:**
-> - `[SLO name]`: [what it measures in plain English] — Status: [Normal/At risk/Triggered], [X]% budget remaining
-> - _(or: No SLOs configured yet)_
+> - `[SLO name]`: [what it measures in plain English] — [X]% compliance measured directly against the `sli.*` column, or reported from the Honeycomb UI
+> - Burn alert: [configured at Nx over window / not set up yet]
+> - _(or: No SLOs configured yet — proxy baseline used instead)_
 >
 > **Current posture:** [1–2 sentence plain-English summary — e.g., "Checkout is healthy with 87% error budget remaining. Latency is within normal range." or "Payments SLO is burning at 3x — worth keeping an eye on."]
 >
-> **What to alert on:** [Specific recommendation — e.g., "Set a fast-burn alert at 14x over 1 hour for the checkout-success SLO"]
->
 > **View in Honeycomb:** [link to SLO page or reliability board]"
+
+**Offer to persist this as a board**, same as the exploration path: check `list_boards` first, then `create_board` with the SLO as a panel plus the key queries from this session — only if the user wants one.
 
 Then offer next steps:
 
 > "Want to go deeper?
 > - Investigate why a specific SLO is burning (debugging path)
-> - Set up a burn alert to get notified when budget is at risk
 > - Compare SLO performance across time periods"
 
 Update progress.yaml with concepts learned.
@@ -773,6 +802,15 @@ Only explain these when the concept is NOT in `concepts_learned`:
 > - vs. same day last week
 >
 > A P99 of 500ms might be normal or terrible—depends on the baseline."
+
+### Triggers and Burn Alerts
+> "A **trigger** is Honeycomb's general alerting mechanism — it fires when a query result crosses a threshold. A **burn alert** is just a trigger pointed at an SLO's success criteria, comparing the current failure rate against a recent baseline instead of a flat number."
+
+### Recipients
+> "A **recipient** is where a trigger's notification goes — an email address, a Slack channel, PagerDuty, or a webhook. You set one up once and reuse it across multiple triggers."
+
+### Boards
+> "A **board** is a persisted, shareable dashboard — a collection of saved queries, SLOs, and text notes that stays in Honeycomb for your team to revisit, instead of a one-off result that disappears when the chat ends."
 
 ---
 
