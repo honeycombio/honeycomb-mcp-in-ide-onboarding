@@ -110,6 +110,14 @@ If connection fails or MCP tools are still not available:
 
 ---
 
+## Permission Prompts on Every Tool Call?
+
+The committed `.claude/settings.json` pre-approves read-only Honeycomb tools, but only under two known prefixes: `mcp__honeycomb__*` (from `claude mcp add honeycomb ...` above) and `mcp__claude_ai_Honeycomb__*` (from the claude.ai integrations page, if that integration is named the default "Honeycomb"). If you connected Honeycomb some other way — e.g., a claude.ai integration with a custom name — your tools will show up under a different prefix, and every read-only call will prompt.
+
+To fix it: check `/mcp` for the actual prefix your tools use (it appears in each tool name, like `mcp__<your-prefix>__get_workspace_context`), then add the same 22 tool names from `.claude/settings.json` under that prefix to your own `.claude/settings.local.json` (which isn't committed, so it's safe for a personal fix).
+
+---
+
 ## OAuth Priority Note
 
 The Honeycomb MCP prioritizes OAuth workflows for authentication, which is why the `/mcp` command triggers an authentication flow rather than requiring API keys in configuration.

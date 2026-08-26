@@ -122,7 +122,10 @@ create_trigger(
   name: "checkout-availability-fast-burn",
   environment_slug: "<their environment>",
   dataset_slug: "checkout-service",
-  query: { calculations: [{ op: "COUNT", filters: [{ column: "sli.checkout_available", op: "=", value: false }] }] },
+  query: {
+    calculations: [{ op: "COUNT" }],
+    filters: [{ column: "sli.checkout_available", op: "=", value: false }]
+  },
   baseline_details: { type: "percentage", offset_minutes: 60 },
   threshold: { op: ">=", value: 14 },   # 14x = fast burn
   recipients: ["<recipient_id>"]
